@@ -20,7 +20,8 @@ export default function Login() {
     try {
       const data = await authApi.login(form)
       login(data.access_token, data.role)
-      const from = location.state?.from?.pathname || '/'
+      const home = data.role === 'employer' ? '/employer/dashboard' : data.role === 'admin' ? '/admin' : '/'
+      const from = location.state?.from?.pathname || home
       navigate(from, { replace: true })
     } catch (err) {
       setError(err.message)

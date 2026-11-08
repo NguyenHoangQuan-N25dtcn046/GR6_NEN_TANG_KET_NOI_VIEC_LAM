@@ -1,6 +1,6 @@
 # GR6 — Nền tảng kết nối việc làm
 
-Bản nền phát triển cho nhóm 6, gồm API FastAPI, giao diện React/Vite, phân quyền Ứng viên/Nhà tuyển dụng/Admin và các màn hình Ứng viên. Các tuyến giao diện TV4 đã có kiểm tra vai trò và sẽ nhận phần triển khai từ nhánh `feat/tv4-employer-admin`.
+Bản phát triển cho nhóm 6, gồm API FastAPI, giao diện React/Vite và phân quyền Ứng viên/Nhà tuyển dụng/Admin. Phần Employer/Admin có [hướng dẫn demo và nghiệm thu TV4](frontend/TV4-DEMO.md).
 
 ## Chạy trên Windows
 

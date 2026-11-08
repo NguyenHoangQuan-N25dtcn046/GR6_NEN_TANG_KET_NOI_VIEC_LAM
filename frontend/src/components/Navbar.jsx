@@ -90,6 +90,15 @@ export default function Navbar() {
           )}
         </div>
       </nav>
+      {isAuthenticated && (role === 'employer' || role === 'admin') && (
+        <nav aria-label="Khu vực quản lý" className="flex flex-wrap gap-1 px-3 pb-2 md:hidden">
+          {links.filter(link => link.to !== '/').map(link => (
+            <NavLink key={link.to} to={link.to} className={navLinkCls} end={link.to === '/admin'}>
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
     </header>
   )
 }

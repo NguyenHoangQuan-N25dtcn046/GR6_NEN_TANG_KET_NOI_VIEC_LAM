@@ -7,6 +7,11 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import CandidateProfile from './pages/candidate/Profile.jsx'
 import CandidateApplications from './pages/candidate/Applications.jsx'
+import EmployerDashboard from './pages/employer/Dashboard.jsx'
+import JobForm from './pages/employer/JobForm.jsx'
+import CompanyProfile from './pages/employer/CompanyProfile.jsx'
+import Applicants from './pages/employer/Applicants.jsx'
+import AdminDashboard from './pages/admin/Dashboard.jsx'
 import AdminUsers from './pages/admin/Users.jsx'
 
 export default function App() {
@@ -39,7 +44,7 @@ export default function App() {
           path="/employer/dashboard"
           element={
             <ProtectedRoute role="employer">
-              <PendingModule title="Tin tuyển dụng" />
+              <EmployerDashboard />
             </ProtectedRoute>
           }
         />
@@ -47,7 +52,7 @@ export default function App() {
           path="/employer/jobs/new"
           element={
             <ProtectedRoute role="employer">
-              <PendingModule title="Đăng tin tuyển dụng" />
+              <JobForm />
             </ProtectedRoute>
           }
         />
@@ -55,7 +60,7 @@ export default function App() {
           path="/employer/jobs/:id/edit"
           element={
             <ProtectedRoute role="employer">
-              <PendingModule title="Chỉnh sửa tin tuyển dụng" />
+              <JobForm />
             </ProtectedRoute>
           }
         />
@@ -63,7 +68,7 @@ export default function App() {
           path="/employer/jobs/:id/applicants"
           element={
             <ProtectedRoute role="employer">
-              <PendingModule title="Danh sách ứng viên" />
+              <Applicants />
             </ProtectedRoute>
           }
         />
@@ -71,7 +76,7 @@ export default function App() {
           path="/employer/company"
           element={
             <ProtectedRoute role="employer">
-              <PendingModule title="Hồ sơ công ty" />
+              <CompanyProfile />
             </ProtectedRoute>
           }
         />
@@ -80,7 +85,7 @@ export default function App() {
           path="/admin"
           element={
             <ProtectedRoute role="admin">
-              <PendingModule title="Kiểm duyệt tin tuyển dụng" />
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />
@@ -96,15 +101,6 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
-  )
-}
-
-function PendingModule({ title }) {
-  return (
-    <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-      <p className="mt-2 text-slate-600">Màn hình này đang chờ tích hợp.</p>
-    </section>
   )
 }
 
