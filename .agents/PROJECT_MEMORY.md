@@ -1,5 +1,7 @@
 # TV4 · Xem thử theo Figma
 
+- English/Figma mobile pass: all visible frontend copy, document language, and title use English. Below 768 px, the header is one row with JobLink and an accessible Menu/Close control; the menu closes after navigation or Escape and returns focus. Job actions become a full-width primary action with secondary actions below. Verified at 320, 390, 617, 767, 768, 1024, 1173, and 1440 px in Chromium plus iPhone WebKit.
+- Hiệu ứng công nghệ sau `43c2e2a`: dải tiêu đề có lưới chấm và luồng sáng 8 giây, tự tạm dừng ngoài vùng nhìn; tiêu đề/nút xuất hiện trong 200 ms; menu desktop có vạch chỉ trang trượt; hàng dữ liệu phản hồi hover/focus; đóng và duyệt tin nhấn đúng kết quả vừa đổi. `prefers-reduced-motion` dùng nền tĩnh và bỏ toàn bộ chuyển động.
 - Tinh chỉnh sau góp ý: Quản lý tin dùng các cột thao tác cố định từ 1024 px; menu có nền hover, trạng thái trang hiện tại và viền tiêu điểm; Hồ sơ công ty mở trống với gợi ý ở cả năm trường. Đã kiểm tra căn cột trước/sau khi đóng tin, hover và bàn phím, lỗi lưu và giữ dữ liệu trong phiên trên Chromium. Luồng TV4 cũng đạt trên WebKit iPhone.
 
 - Worktree local `feat/tv4-figma-preview` tách từ `1109d4e` của Quân. Xem tại http://127.0.0.1:5175/__preview/tv4/jobs. Tuyến chỉ có trong Vite dev, dữ liệu mẫu nằm trong bộ nhớ và khôi phục khi tải lại.

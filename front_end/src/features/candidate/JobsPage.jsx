@@ -14,9 +14,9 @@ export default function JobsPage() {
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [q])
-  return <section><h1>Tìm việc làm</h1><input aria-label="Tìm việc" placeholder="Tìm theo tiêu đề hoặc địa điểm" value={q} onChange={e=>setQ(e.target.value)}/>
-    {loading && <p>Đang tải...</p>}{error && <p role="alert">Không thể kết nối API: {error}</p>}
-    {!loading && !error && jobs.length === 0 && <p>Chưa có tin tuyển dụng công khai.</p>}
+  return <section><h1>Find Jobs</h1><input aria-label="Search jobs" placeholder="Search by job title or location" value={q} onChange={e=>setQ(e.target.value)}/>
+    {loading && <p>Loading...</p>}{error && <p role="alert">Unable to connect to the API: {error}</p>}
+    {!loading && !error && jobs.length === 0 && <p>No public jobs are available yet.</p>}
     {jobs.map(job=><article key={job.id}><h2>{job.title}</h2><p>{job.location}</p><p>{job.description}</p></article>)}
   </section>
 }

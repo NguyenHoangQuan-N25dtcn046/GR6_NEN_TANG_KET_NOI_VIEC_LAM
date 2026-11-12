@@ -2,14 +2,38 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 export const base = '/__preview/tv4'
-export const workLabels = { onsite: 'Tại văn phòng', remote: 'Từ xa', hybrid: 'Kết hợp' }
-export const jobLabels = { active: 'Đang tuyển', pending: 'Chờ duyệt', rejected: 'Bị từ chối', closed: 'Đã đóng' }
+export const workLabels = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' }
+export const jobLabels = { active: 'Active', pending: 'Pending Review', rejected: 'Rejected', closed: 'Closed' }
 export const ButtonLink = ({ to, children, primary }) => <Link className={'tv-button ' + (primary ? 'tv-primary' : '')} to={base + to}>{children}</Link>
 export const Badge = ({ tone, children }) => <span className={'tv-badge tv-' + tone}>{children}</span>
-export const Notice = ({ error, children }) => children && <p className={'tv-notice ' + (error ? 'tv-error' : '')} role={error ? 'alert' : 'status'}>{children}</p>
+export const Notice = ({ error, children, className = '' }) => children && <p className={'tv-notice ' + (error ? 'tv-error ' : '') + className} role={error ? 'alert' : 'status'}>{children}</p>
 
 export function Heading({ title, action }) {
-  return <div className="tv-mast"><div className="tv-wrap tv-title"><h1>{title}</h1>{action}</div></div>
+  const mast = useRef(null)
+  const [active, setActive] = useState(true)
+  useEffect(() => {
+    const element = mast.current
+    const update = visible => setActive(visible && !document.hidden)
+    const isVisible = () => {
+      const box = element.getBoundingClientRect()
+      return box.bottom > 0 && box.top < innerHeight
+    }
+    const observer = new IntersectionObserver(([entry]) => update(entry.isIntersecting), { threshold: 0.05 })
+    const onVisibility = () => update(isVisible())
+    observer.observe(element)
+    document.addEventListener('visibilitychange', onVisibility)
+    addEventListener('scroll', onVisibility, { passive: true })
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
+      removeEventListener('scroll', onVisibility)
+    }
+  }, [])
+  return <div ref={mast} className={'tv-mast ' + (active ? 'tv-motion-active' : 'tv-motion-paused')}>
+    <div className="tv-tech-grid" aria-hidden="true" />
+    <div className="tv-tech-scan" aria-hidden="true" />
+    <div className="tv-wrap tv-title"><h1>{title}</h1>{action}</div>
+  </div>
 }
 
 export function Confirm({ title, description, label, onCancel, onConfirm, fallback }) {
@@ -39,7 +63,7 @@ export function Confirm({ title, description, label, onCancel, onConfirm, fallba
       }
     }}>
     <h2 id={id}>{title}</h2><p id={id + '-description'}>{description}</p>
-    <div className="tv-actions"><button onClick={onCancel}>Hủy</button><button className="tv-danger" onClick={onConfirm}>{label}</button></div>
+    <div className="tv-actions"><button onClick={onCancel}>Cancel</button><button className="tv-danger" onClick={onConfirm}>{label}</button></div>
   </dialog>
 }
 
@@ -72,7 +96,7 @@ export function Choice({ label, value, options, onChange, invalid, placeholder }
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true) } }}
       onClick={() => open ? setOpen(false) : setOpen(true)}>
       <span id={id + '-value'} className={placeholder && !selectedLabel ? 'tv-placeholder' : undefined}>
-        {selectedLabel || placeholder || 'Chọn ' + label.toLowerCase()}
+        {selectedLabel || placeholder || 'Select ' + label.toLowerCase()}
       </span><span aria-hidden="true">⌄</span>
     </button>
     {open && <div role="listbox" aria-labelledby={id} className="tv-options">{options.map(([key, name], i) =>

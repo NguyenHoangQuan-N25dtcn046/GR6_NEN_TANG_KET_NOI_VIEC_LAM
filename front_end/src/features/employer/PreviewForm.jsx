@@ -2,10 +2,10 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { base, ButtonLink, Choice, Heading, Notice } from '../tv4-preview/ui'
 
-const locations = ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ']
-const categories = ['Công nghệ thông tin', 'Thiết kế', 'Nhân sự', 'Kinh doanh']
-const types = [['onsite', 'Tại văn phòng'], ['remote', 'Từ xa'], ['hybrid', 'Kết hợp']]
-const sizes = [['1-10', '1–10'], ['11-50', '11–50'], ['51-200', '51–200'], ['201-500', '201–500'], ['500+', 'Trên 500']]
+const locations = ['Ho Chi Minh City', 'Hanoi', 'Da Nang', 'Can Tho']
+const categories = ['Information Technology', 'Design', 'Human Resources', 'Business']
+const types = [['onsite', 'On-site'], ['remote', 'Remote'], ['hybrid', 'Hybrid']]
+const sizes = [['1-10', '1–10 employees'], ['11-50', '11–50 employees'], ['51-200', '51–200 employees'], ['201-500', '201–500 employees'], ['500+', 'More than 500 employees']]
 const options = values => values.map(value => [value, value])
 const emptyJob = { title: '', description: '', location: '', category: '', work_type: 'onsite', salary_min: '', salary_max: '' }
 
@@ -16,7 +16,7 @@ export default function PreviewForm({ record, company = false, save }) {
   const [pending, setPending] = useState(false)
   const saving = useRef(false)
   const navigate = useNavigate()
-  const title = company ? 'Hồ sơ công ty' : record ? 'Sửa tin tuyển dụng' : 'Đăng tin tuyển dụng'
+  const title = company ? 'Company Profile' : record ? 'Edit Job' : 'Post a Job'
   function change(key, value) {
     setForm(previous => ({ ...previous, [key]: value }))
     setErrors(previous => ({ ...previous, [key]: '' }))
@@ -35,17 +35,17 @@ export default function PreviewForm({ record, company = false, save }) {
     if (saving.current) return
     const next = {}
     const required = company ? ['company_name'] : ['title', 'description', 'location']
-    required.forEach(key => { if (!String(form[key] || '').trim()) next[key] = 'Vui lòng điền trường này.' })
+    required.forEach(key => { if (!String(form[key] || '').trim()) next[key] = 'This field is required.' })
     const { salary_min: min, salary_max: max } = form
     if (!company && (Number(min) < 0 || Number(max) < 0 || (min !== '' && max !== '' && min != null && max != null && Number(min) > Number(max)))) {
-      next.salary_max = 'Khoảng lương phải hợp lệ và lương tối đa không thấp hơn tối thiểu.'
+      next.salary_max = 'Enter a valid salary range with the maximum at least equal to the minimum.'
     }
     if (company) for (const key of ['website', 'logo_url']) {
-      if (form[key] && !/^https?:\/\/[^\s/]+/i.test(form[key])) next[key] = 'Nhập đường dẫn bắt đầu bằng http:// hoặc https://.'
+      if (form[key] && !/^https?:\/\/[^\s/]+/i.test(form[key])) next[key] = 'Enter a URL beginning with http:// or https://.'
     }
     setErrors(next)
     if (Object.keys(next).length) {
-      setMessage({ error: true, text: 'Kiểm tra các trường được đánh dấu.' })
+      setMessage({ error: true, text: 'Check the highlighted fields.' })
       return
     }
     saving.current = true
@@ -53,8 +53,8 @@ export default function PreviewForm({ record, company = false, save }) {
     setMessage(null)
     try {
       await save(form)
-      if (company) setMessage({ text: 'Đã lưu hồ sơ công ty.' })
-      else navigate(base + '/jobs', { state: { notice: 'Đã lưu tin và gửi duyệt.' } })
+      if (company) setMessage({ text: 'Company profile saved.' })
+      else navigate(base + '/jobs', { state: { notice: 'Job saved and submitted for review.' } })
     } catch (error) {
       setMessage({ error: true, text: error.message })
     } finally {
@@ -63,28 +63,28 @@ export default function PreviewForm({ record, company = false, save }) {
     }
   }
   return <><Heading title={title} /><div className="tv-wrap tv-content">
-    <ButtonLink to="/jobs">Về quản lý tin</ButtonLink>
+    <ButtonLink to="/jobs">Back to My Jobs</ButtonLink>
     <form className="tv-form" noValidate onSubmit={submit} aria-busy={pending}>
-      <h2>{company ? 'Thông tin công ty' : 'Thông tin công việc'}</h2>
+      <h2>{company ? 'Company Information' : 'Job Information'}</h2>
       <fieldset disabled={pending} className="tv-grid">
         {company ? <>
-          {field('company_name', 'Tên công ty', { required: true, wide: true, placeholder: 'Ví dụ: Công ty ABC' })}
+          {field('company_name', 'Company Name', { required: true, wide: true, placeholder: 'Example: Acme Company' })}
           {field('website', 'Website', { type: 'url', placeholder: 'https://example.com' })}
-          <Choice label="Quy mô" value={form.size} options={sizes} placeholder="Chọn quy mô công ty" onChange={value => change('size', value)} />
-          {field('address', 'Địa chỉ', { wide: true, placeholder: 'Ví dụ: Quận 1, TP. Hồ Chí Minh' })}
-          {field('logo_url', 'Đường dẫn logo', { type: 'url', wide: true, placeholder: 'https://example.com/logo.png' })}
+          <Choice label="Company Size" value={form.size} options={sizes} placeholder="Select company size" onChange={value => change('size', value)} />
+          {field('address', 'Address', { wide: true, placeholder: 'Example: District 1, Ho Chi Minh City' })}
+          {field('logo_url', 'Logo URL', { type: 'url', wide: true, placeholder: 'https://example.com/logo.png' })}
         </> : <>
-          {field('title', 'Tiêu đề công việc', { required: true, wide: true })}
-          {field('description', 'Mô tả công việc', { required: true, wide: true, multiline: true })}
-          <div><Choice label="Tỉnh/Thành *" value={form.location} options={options(locations)} invalid={!!errors.location} onChange={value => change('location', value)} />
+          {field('title', 'Job Title', { required: true, wide: true })}
+          {field('description', 'Job Description', { required: true, wide: true, multiline: true })}
+          <div><Choice label="Location *" value={form.location} options={options(locations)} invalid={!!errors.location} onChange={value => change('location', value)} />
           {errors.location && <span className="tv-field-error">{errors.location}</span>}</div>
-          <Choice label="Ngành nghề" value={form.category} options={options(categories)} onChange={value => change('category', value)} />
-          <Choice label="Hình thức làm việc" value={form.work_type} options={types} onChange={value => change('work_type', value)} />
-          <div className="tv-wide tv-grid">{field('salary_min', 'Lương tối thiểu (VNĐ)', { type: 'number' })}{field('salary_max', 'Lương tối đa (VNĐ)', { type: 'number' })}</div>
+          <Choice label="Category" value={form.category} options={options(categories)} onChange={value => change('category', value)} />
+          <Choice label="Work Arrangement" value={form.work_type} options={types} onChange={value => change('work_type', value)} />
+          <div className="tv-wide tv-grid">{field('salary_min', 'Minimum Salary (VND)', { type: 'number' })}{field('salary_max', 'Maximum Salary (VND)', { type: 'number' })}</div>
         </>}
       </fieldset>
       <Notice error={message?.error}>{message?.text}</Notice>
-      <div className="tv-actions"><button className="tv-primary" disabled={pending}>{pending ? 'Đang lưu…' : company ? 'Lưu hồ sơ công ty' : 'Lưu và gửi duyệt'}</button></div>
+      <div className="tv-actions"><button className="tv-primary" disabled={pending}>{pending ? 'Saving…' : company ? 'Save Company Profile' : 'Save & Submit for Review'}</button></div>
     </form>
   </div></>
 }

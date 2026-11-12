@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import PreviewJobs from '../employer/PreviewJobs'
 import PreviewForm from '../employer/PreviewForm'
@@ -8,15 +8,15 @@ import { base, ButtonLink, Heading } from './ui'
 import './preview.css'
 
 const initialJobs = [
-  { id: 1, title: 'Nhân viên thiết kế sản phẩm', location: 'TP. Hồ Chí Minh', work_type: 'hybrid', category: 'Thiết kế', salary_min: 16000000, salary_max: 24000000, status: 'active' },
-  { id: 2, title: 'Chuyên viên tuyển dụng và phát triển thương hiệu Nhà tuyển dụng cho thị trường miền Trung', location: 'Đà Nẵng', work_type: 'onsite', category: 'Nhân sự', status: 'pending' },
-  { id: 3, title: 'Kỹ sư phần mềm', location: 'Hà Nội', work_type: 'remote', category: 'Công nghệ thông tin', status: 'rejected' },
-  { id: 4, title: 'Chuyên viên chăm sóc khách hàng', location: 'Cần Thơ', work_type: 'onsite', category: 'Kinh doanh', status: 'closed' },
-].map(job => ({ ...job, created_at: '11/11/2026', description: 'Phối hợp với nhóm để lập kế hoạch, thực hiện công việc và báo cáo kết quả theo tuần. Trao đổi cụ thể về phạm vi công việc trong buổi phỏng vấn.' }))
+  { id: 1, title: 'Product Designer', location: 'Ho Chi Minh City', work_type: 'hybrid', category: 'Design', salary_min: 16000000, salary_max: 24000000, status: 'active' },
+  { id: 2, title: 'Talent Acquisition and Employer Branding Specialist for Central Vietnam', location: 'Da Nang', work_type: 'onsite', category: 'Human Resources', status: 'pending' },
+  { id: 3, title: 'Software Engineer', location: 'Hanoi', work_type: 'remote', category: 'Information Technology', status: 'rejected' },
+  { id: 4, title: 'Customer Support Specialist', location: 'Can Tho', work_type: 'onsite', category: 'Business', status: 'closed' },
+].map(job => ({ ...job, created_at: 'Nov 11, 2026', description: 'Work with the team to plan and deliver projects, then report progress each week. The detailed scope will be discussed during the interview.' }))
 
 const initialApplicants = [{
-  id: 1, job_id: 1, name: 'Nguyễn Minh Anh', email: 'minh.anh.thiet.ke.san.pham.demo@example.com', status: 'submitted',
-  message: 'Tôi có kinh nghiệm thiết kế sản phẩm và nghiên cứu người dùng. Tôi muốn trao đổi thêm về cách đội ngũ phối hợp với kỹ sư trong quá trình phát triển sản phẩm.',
+  id: 1, job_id: 1, name: 'Minh Anh Nguyen', email: 'minh.anh.product.design.demo@example.com', status: 'submitted',
+  message: 'I have experience in product design and user research. I would like to learn more about how the design and engineering teams work together.',
 }]
 
 const initialUsers = [
@@ -26,7 +26,7 @@ const initialUsers = [
 ].map(user => ({ ...user, created_at: '11/11/2026' }))
 
 function Missing() {
-  return <><Heading title="Không tìm thấy nội dung" /><div className="tv-wrap tv-content"><ButtonLink to="/jobs">Về quản lý tin</ButtonLink></div></>
+  return <><Heading title="Page not found" /><div className="tv-wrap tv-content"><ButtonLink to="/jobs">Back to My Jobs</ButtonLink></div></>
 }
 
 function JobRoute({ jobs, render }) {
@@ -39,10 +39,10 @@ function SampleCv({ applicants }) {
   const { id } = useParams()
   const applicant = applicants.find(item => String(item.id) === id)
   if (!applicant) return <Missing />
-  return <><Heading title="CV mẫu" /><div className="tv-wrap tv-content">
-    <ButtonLink to={'/jobs/' + applicant.job_id + '/applicants'}>Về danh sách ứng viên</ButtonLink>
+  return <><Heading title="Sample Resume" /><div className="tv-wrap tv-content">
+    <ButtonLink to={'/jobs/' + applicant.job_id + '/applicants'}>Back to Applicants</ButtonLink>
     <h2>{applicant.name}</h2><p>{applicant.email}</p>
-    <h3>Kinh nghiệm</h3><p>Thiết kế giao diện, xây dựng mẫu thử và nghiên cứu người dùng.</p>
+    <h3>Experience</h3><p>Interface design, interactive prototyping, and user research.</p>
   </div></>
 }
 
@@ -55,21 +55,58 @@ export default function Preview() {
   const [applicants, setApplicants] = useState(initialApplicants)
   const [company, setCompany] = useState({ company_name: '', website: '', size: '', address: '', logo_url: '' })
   const [failed, setFailed] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuButton = useRef(null)
   async function save(change) {
     await new Promise(resolve => setTimeout(resolve, 450))
     if (scenario === 'save-error' && !failed) {
       setFailed(true)
-      throw new Error('Không thể lưu dữ liệu mẫu. Vui lòng thử lại.')
+      throw new Error('Unable to save the sample data. Please try again.')
     }
     change()
   }
   const patchJob = (id, changes) => setJobs(items => items.map(job => job.id === id ? { ...job, ...changes } : job))
-  const links = [['/jobs', 'Tin tuyển dụng'], ['/company', 'Hồ sơ công ty'], ['/review', 'Kiểm duyệt'], ['/users', 'Người dùng']]
+  const links = [['/jobs', 'My Jobs'], ['/company', 'Company Profile'], ['/review', 'Review Jobs'], ['/users', 'Users']]
+  const nav = useRef(null)
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, ready: false })
+  useLayoutEffect(() => {
+    const element = nav.current
+    const update = () => {
+      const active = element.querySelector('[aria-current="page"]')
+      if (!active) return
+      const navBox = element.getBoundingClientRect()
+      const activeBox = active.getBoundingClientRect()
+      setIndicator({ left: activeBox.left - navBox.left, width: activeBox.width, ready: true })
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [location.pathname, menuOpen])
+  useEffect(() => setMenuOpen(false), [location.pathname])
+  useEffect(() => {
+    if (!menuOpen) return
+    const closeOnEscape = event => {
+      if (event.key !== 'Escape') return
+      setMenuOpen(false)
+      menuButton.current?.focus()
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [menuOpen])
   return <main className="tv4-preview">
     <div className="tv-nav"><div className="tv-wrap tv-nav-inner">
-      <Link className="tv-brand" to={base + '/jobs'}><span aria-hidden="true">JL</span> JobLink</Link>
-      <nav aria-label="Bản xem thử TV4">{links.map(([path, label]) => <NavLink key={path} to={base + path}>{label}</NavLink>)}</nav>
-      <span className="tv-preview-label">Bản xem thử · Dữ liệu mẫu</span>
+      <Link className="tv-brand" to={base + '/jobs'} onClick={() => setMenuOpen(false)}><span aria-hidden="true">JL</span> JobLink</Link>
+      <button ref={menuButton} className="tv-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="tv4-navigation"
+        aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} onClick={() => setMenuOpen(open => !open)}>
+        <span className="tv-menu-icon" aria-hidden="true"><i /><i /><i /></span><span>{menuOpen ? 'Close' : 'Menu'}</span>
+      </button>
+      <nav id="tv4-navigation" ref={nav} className={menuOpen ? 'tv-mobile-open' : ''} aria-label="TV4 preview navigation">
+        {links.map(([path, label]) => <NavLink key={path} to={base + path} onClick={() => setMenuOpen(false)}>{label}</NavLink>)}
+        <span className={'tv-nav-indicator ' + (indicator.ready ? 'tv-indicator-ready' : '')}
+          style={{ '--indicator-x': indicator.left + 'px', '--indicator-width': indicator.width + 'px' }} aria-hidden="true" />
+      </nav>
+      <span className={'tv-preview-label ' + (menuOpen ? 'tv-mobile-open' : '')}>Preview · Sample data</span>
     </div></div>
     <Routes>
       <Route index element={<Navigate to="jobs" replace />} />
