@@ -1,6 +1,6 @@
 from datetime import datetime, date, timezone
 from decimal import Decimal
-from sqlalchemy import String, Text, ForeignKey, DateTime, Date, Numeric, Boolean, UniqueConstraint
+from sqlalchemy import String, Text, ForeignKey, DateTime, Date, Numeric, Boolean, UniqueConstraint, Column, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
@@ -58,3 +58,27 @@ class Application(Base):
     cover_letter: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    jti = Column(String(255), unique=True, nullable=False, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    revoked_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+
+    expires_at = Column(
+        DateTime(timezone=True),
+        nullable=False
+    )
