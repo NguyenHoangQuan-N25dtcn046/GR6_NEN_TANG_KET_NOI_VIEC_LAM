@@ -5,6 +5,10 @@ from app.db.session import Base, engine
 from app.models import entities  # register models
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.candidate import router as candidate_router
+from app.api.v1.employer import router as employer_router
+from app.api.v1.admin import router as admin_router
+
 
 app = FastAPI(title="Job Connection Platform API")
 app.add_middleware(CORSMiddleware, allow_origins=[s.strip() for s in settings.CORS_ORIGINS.split(",")], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -20,3 +24,6 @@ def health():
 
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(candidate_router, prefix="/api/v1")
+app.include_router(employer_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
