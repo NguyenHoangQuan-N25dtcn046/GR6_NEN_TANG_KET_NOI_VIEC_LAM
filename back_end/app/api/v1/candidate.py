@@ -1,32 +1,45 @@
-
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
+from sqlalchemy.orm import Session
 
 from app.core.permissions import require_candidate
+from app.db.session import get_db
 from app.models.entities import User
+from app.schemas.application import ApplicationOut
+from app.schemas.profile import CandidateProfileOut, CandidateProfileUpdate
+from app.services import application_service, profile_service
 
-router = APIRouter(
-    prefix="/candidate",
-    tags=["Candidate"]
-)
+router = APIRouter(prefix="/candidate", tags=["Candidate"])
 
 
-@router.get("/dashboard")
-def candidate_dashboard(
-    current_user: User = Depends(require_candidate)
+@router.get("/profile", response_model=CandidateProfileOut, summary="Xem hồ sơ của tôi")
+def get_my_profile(
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
 ):
-    return {
-        "message": "Chào mừng Candidate",
-        "user_id": current_user.id,
-        "role": "candidate"
-    }
+    return profile_service.get_profile(db, current_user.id)
 
 
-@router.get("/applications")
+@router.patch("/profile", response_model=CandidateProfileOut, summary="Cập nhật hồ sơ")
+def update_my_profile(
+    payload: CandidateProfileUpdate,
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
+):
+    return profile_service.update_profile(db, payload, current_user.id)
+
+
+@router.get("/applications", response_model=list[ApplicationOut], summary="Lịch sử ứng tuyển của tôi")
 def get_my_applications(
-    current_user: User = Depends(require_candidate)
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
 ):
-    return {
-        "message": "Danh sách công việc đã ứng tuyển",
-        "candidate_id": current_user.id,
-        "data": []
-    }
+    return application_service.list_candidate_applications(db, current_user.id)
+
+
+@router.post("/cv", response_model=CandidateProfileOut, summary="Upload CV PDF")
+def upload_cv(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
+):
+    return profile_service.upload_cv(db, file, current_user.id)
