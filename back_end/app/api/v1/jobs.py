@@ -25,6 +25,14 @@ def list_jobs(
     return job_service.list_public_jobs(db, q, location, category_id, limit, offset)
 
 
+@router.get("/{job_id}", response_model=JobOut, summary="Chi tiết tin tuyển dụng")
+def get_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+):
+    return job_service.get_public_job(db, job_id)
+
+
 @router.post("/{job_id}/applications", response_model=ApplicationOut, status_code=201, summary="Ứng tuyển công việc")
 def apply_to_job(
     job_id: int,

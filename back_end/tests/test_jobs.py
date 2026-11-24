@@ -41,3 +41,21 @@ def test_pagination(client, db_session):
 
     resp = client.get("/api/v1/jobs", params={"limit": 2, "offset": 4})
     assert len(resp.json()) == 1
+
+
+def test_job_detail_published(client, db_session):
+    _, emp = create_user(db_session, "emp4@test.com", "employer")
+    job = create_job(db_session, emp.id, title="Backend", status="published")
+
+    resp = client.get(f"/api/v1/jobs/{job.id}")
+    assert resp.status_code == 200
+    assert resp.json()["id"] == job.id
+    assert resp.json()["title"] == "Backend"
+
+
+def test_job_detail_hides_unpublished(client, db_session):
+    _, emp = create_user(db_session, "emp5@test.com", "employer")
+    job = create_job(db_session, emp.id, title="Secret", status="pending")
+
+    resp = client.get(f"/api/v1/jobs/{job.id}")
+    assert resp.status_code == 404

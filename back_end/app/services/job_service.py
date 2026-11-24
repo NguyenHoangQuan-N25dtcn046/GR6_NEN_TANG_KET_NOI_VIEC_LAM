@@ -34,6 +34,14 @@ def list_public_jobs(
     return db.scalars(stmt.order_by(Job.id.desc()).offset(offset).limit(limit)).all()
 
 
+def get_public_job(db: Session, job_id: int) -> Job:
+    """Chi tiết tin công khai; ẩn tin chưa duyệt (trả 404 như không tồn tại)."""
+    job = db.get(Job, job_id)
+    if job is None or job.status != "published":
+        raise HTTPException(status_code=404, detail="Tin tuyển dụng không tồn tại")
+    return job
+
+
 def list_employer_jobs(db: Session, user_id: int, limit: int = 20, offset: int = 0):
     """Danh sách tin của chính nhà tuyển dụng (mọi trạng thái)."""
     profile = get_employer_profile(db, user_id)
