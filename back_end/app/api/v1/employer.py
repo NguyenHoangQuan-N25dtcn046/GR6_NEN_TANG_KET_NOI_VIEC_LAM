@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.permissions import require_employer
@@ -67,3 +68,14 @@ def update_application_status(
     db: Session = Depends(get_db),
 ):
     return application_service.update_application_status(db, job_id, application_id, payload, current_user.id)
+
+
+@router.get("/jobs/{job_id}/applications/{application_id}/cv", summary="Tải CV ứng viên")
+def download_application_cv(
+    job_id: int,
+    application_id: int,
+    current_user: User = Depends(require_employer),
+    db: Session = Depends(get_db),
+):
+    path = application_service.get_application_cv_path(db, job_id, application_id, current_user.id)
+    return FileResponse(path, media_type="application/pdf", filename="cv.pdf")

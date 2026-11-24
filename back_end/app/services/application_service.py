@@ -1,12 +1,14 @@
 from datetime import date
+from pathlib import Path
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.entities import Application, Job
+from app.models.entities import Application, CandidateProfile, Job
 from app.schemas.application import ApplicationCreate, ApplicationStatusUpdate
+from app.services.cv_service import resolve_cv_path
 from app.services.ownership import get_candidate_profile, get_employer_profile, get_owned_job
 
 
@@ -80,3 +82,23 @@ def update_application_status(
     db.commit()
     db.refresh(application)
     return application
+
+
+def get_application_cv_path(db: Session, job_id: int, application_id: int, user_id: int) -> Path:
+    """Đường dẫn file CV của đơn ứng tuyển (chỉ employer sở hữu tin xem được)."""
+    profile = get_employer_profile(db, user_id)
+    job = get_owned_job(db, job_id, profile.id)
+    application = db.get(Application, application_id)
+    if application is None or application.job_id != job.id:
+        raise HTTPException(status_code=404, detail="Đơn ứng tuyển không tồn tại")
+
+    cv_url = application.cv_url
+    if not cv_url:
+        # Nếu đơn không gắn CV riêng thì dùng CV trong hồ sơ ứng viên.
+        candidate = db.get(CandidateProfile, application.candidate_id)
+        cv_url = candidate.cv_url if candidate else None
+
+    path = resolve_cv_path(cv_url)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Ứng viên chưa có CV")
+    return path

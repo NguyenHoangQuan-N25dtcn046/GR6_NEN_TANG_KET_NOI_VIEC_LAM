@@ -1,3 +1,4 @@
+import re
 import uuid
 from pathlib import Path
 
@@ -45,3 +46,21 @@ def save_cv(file: UploadFile, user_id: int) -> str:
     (upload_dir / stored_name).write_bytes(content)
 
     return f"/uploads/cv/{stored_name}"
+
+
+def resolve_cv_path(cv_url: str | None) -> Path | None:
+    """Chuyển `cv_url` thành đường dẫn file thực trên đĩa.
+
+    Chặn path traversal và file không tồn tại; trả None nếu không hợp lệ.
+    """
+    if not cv_url:
+        return None
+    prefix = "/uploads/cv/"
+    if not cv_url.startswith(prefix):
+        return None
+    stored_name = cv_url[len(prefix):]
+    # Chỉ chấp nhận tên file an toàn: <userid>_<uuid>.pdf
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+\.pdf", stored_name):
+        return None
+    path = _upload_root() / "cv" / stored_name
+    return path if path.is_file() else None

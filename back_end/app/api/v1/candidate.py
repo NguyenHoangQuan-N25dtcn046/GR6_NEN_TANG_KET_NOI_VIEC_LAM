@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.permissions import require_candidate
@@ -7,6 +8,7 @@ from app.models.entities import User
 from app.schemas.application import ApplicationOut
 from app.schemas.profile import CandidateProfileOut, CandidateProfileUpdate
 from app.services import application_service, profile_service
+from app.services.cv_service import resolve_cv_path
 
 router = APIRouter(prefix="/candidate", tags=["Candidate"])
 
@@ -43,3 +45,15 @@ def upload_cv(
     db: Session = Depends(get_db),
 ):
     return profile_service.upload_cv(db, file, current_user.id)
+
+
+@router.get("/cv", summary="Tải CV của tôi")
+def download_own_cv(
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
+):
+    profile = profile_service.get_profile(db, current_user.id)
+    path = resolve_cv_path(profile.cv_url)
+    if path is None:
+        raise HTTPException(status_code=404, detail="Chưa có CV")
+    return FileResponse(path, media_type="application/pdf", filename="cv.pdf")
