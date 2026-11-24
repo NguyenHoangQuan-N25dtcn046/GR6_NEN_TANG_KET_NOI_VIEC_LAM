@@ -48,6 +48,12 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     deadline: Mapped[date | None] = mapped_column(Date)
 
+    employer = relationship("EmployerProfile", lazy="joined")
+
+    @property
+    def company_name(self) -> str | None:
+        return self.employer.company_name if self.employer else None
+
 class Application(Base):
     __tablename__ = "applications"
     __table_args__ = (UniqueConstraint("job_id", "candidate_id", name="uq_application_job_candidate"),)
@@ -58,6 +64,21 @@ class Application(Base):
     cover_letter: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    job = relationship("Job", lazy="joined")
+    candidate = relationship("CandidateProfile", lazy="joined")
+
+    @property
+    def job_title(self) -> str | None:
+        return self.job.title if self.job else None
+
+    @property
+    def candidate_name(self) -> str | None:
+        return self.candidate.full_name if self.candidate else None
+
+    @property
+    def company_name(self) -> str | None:
+        return self.job.employer.company_name if self.job and self.job.employer else None
 
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
