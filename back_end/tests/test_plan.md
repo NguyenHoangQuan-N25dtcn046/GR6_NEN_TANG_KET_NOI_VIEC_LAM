@@ -1,6 +1,6 @@
 # Checklist kiểm thử — Backend TV2 (Nền tảng kết nối việc làm)
 
-> Chạy tự động: `pytest -q` (18 test, trong `tests/`). ⭐ = kịch bản regression cho bug đã sửa.
+> Chạy tự động: `pytest -q` (23 test, trong `tests/`). ⭐ = kịch bản regression cho bug đã sửa.
 
 ## 🩺 Health
 - [ ] **TC-001** `GET /health` → `200` `{"status":"ok"}`
@@ -42,7 +42,15 @@
 - [ ] **TC-027** Upload sai đuôi file (`.txt`) → `415`
 - [ ] **TC-028** ⭐ Upload file giả mạo (MIME đúng, magic bytes sai) → `415`
 - [ ] **TC-029** Upload vượt kích thước → `413`
+- [ ] **TC-030** `GET /candidate/cv` tải CV của mình → `200` (nội dung PDF)
+- [ ] **TC-031** `GET /candidate/cv` khi chưa có CV → `404`
+- [ ] **TC-032** `GET /employer/jobs/{id}/applications/{aid}/cv` chủ tin → `200`
+- [ ] **TC-033** Employer khác tải CV → `403`
+
+## 🔎 Chi tiết tin
+- [ ] **TC-034** `GET /jobs/{id}` tin `published` → `200`
+- [ ] **TC-035** `GET /jobs/{id}` tin chưa duyệt → `404` (ẩn như không tồn tại)
 
 ---
-> Khi hoàn thành: 29/29 pass = phần backend TV2 sẵn sàng demo & vấn đáp.
-> Ghi nhớ các bug đã chặn: chống gửi trùng (UNIQUE + check trước), chặn tự duyệt tin, kiểm tra file PDF thật (magic bytes).
+> Khi hoàn thành: 35/35 pass = phần backend TV2 sẵn sàng demo & vấn đáp.
+> Ghi nhớ các bug đã chặn: chống gửi trùng (UNIQUE + check trước), chặn tự duyệt tin, kiểm tra file PDF thật (magic bytes), chặn đọc tin chưa duyệt, phân quyền tải CV.
