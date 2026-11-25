@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
+sqlalchemy>=2.0,<2.1
 sqlalchemy_utils
 pydantic-settings
 pymysql
@@ -8,4 +8,5 @@ PyJWT
 pwdlib[argon2]
 email-validator
 pathlib
+python-multipart
 alembic>=1.13,<2
