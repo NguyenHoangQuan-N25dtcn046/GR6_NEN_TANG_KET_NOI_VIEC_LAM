@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,10 +14,7 @@ from app.core.config import settings
 router = APIRouter(prefix='/auth', tags=['auth'])
 bearer = HTTPBearer(auto_error=False)
 
-def authenticated_context(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
-    db: Session = Depends(get_db),
-) -> tuple[User, dict]:
+def authenticated_context(credentials: HTTPAuthorizationCredentials | None = Depends(bearer),db: Session = Depends(get_db),) -> tuple[User, dict]:
     error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token không hợp lệ hoặc đã hết hạn', headers={'WWW-Authenticate': 'Bearer'})
     if not credentials or credentials.scheme.lower() != 'bearer':
         raise error
@@ -34,8 +31,10 @@ def authenticated_context(
     if db.scalar(select(RevokedToken).where(RevokedToken.jti == jti)):
         raise error
     user = db.get(User, user_id)
-    if user is None or not user.is_active:
+    if user is None:
         raise error
+    if not user.is_active:
+        raise HTTPException(403, "Tài khoản đã bị vô hiệu hóa")
     return user, payload
 
 def get_current_user(context: tuple[User, dict] = Depends(authenticated_context)) -> User:
@@ -69,7 +68,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     user = db.scalar(select(User).where(User.email == str(data.email).lower()))
     if user is None or not verify_password(data.password, user.password_hash):
-        raise HTTPException(401, 'Email hoặc mật khẩu không đúng')
+        raise HTTPException(401, 'Email hoặc mật khẩu không đúng', headers={'WWW-Authenticate': 'Bearer'})
     if not user.is_active:
         raise HTTPException(403, 'Tài khoản đã bị vô hiệu hóa')
     return TokenResponse(access_token=create_access_token(user.id))
@@ -78,14 +77,16 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 def me(user: User = Depends(get_current_user)):
     return user
 
-@router.post('/logout')
+@router.post('/logout', status_code=204, response_class=Response)
 def logout(context: tuple[User, dict] = Depends(authenticated_context), db: Session = Depends(get_db)):
-    _, payload = context
+    user, payload = context
     expires_at = datetime.fromtimestamp(payload['exp'], tz=timezone.utc).replace(tzinfo=None)
-    db.add(RevokedToken(jti=payload['jti'], expires_at=expires_at))
+    db.add(RevokedToken(jti=payload['jti'], user_id=user.id, expires_at=expires_at))
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(401, 'Token đã bị thu hồi')
-    return {'message': 'Đăng xuất thành công'}
+        if db.scalar(select(RevokedToken.id).where(RevokedToken.jti == payload['jti'])) is None:
+            raise
+        raise HTTPException(401, 'Token đã bị thu hồi', headers={'WWW-Authenticate': 'Bearer'})
+    return Response(status_code=204)
