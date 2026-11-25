@@ -11,9 +11,7 @@ router = APIRouter(
 
 
 @router.get("/dashboard")
-def candidate_dashboard(
-    current_user: User = Depends(require_candidate)
-):
+def candidate_dashboard(current_user: User = Depends(require_candidate)):
     return {
         "message": "Chào mừng Candidate",
         "user_id": current_user.id,
@@ -22,9 +20,7 @@ def candidate_dashboard(
 
 
 @router.get("/applications")
-def get_my_applications(
-    current_user: User = Depends(require_candidate)
-):
+def get_my_applications(current_user: User = Depends(require_candidate)):
     return {
         "message": "Danh sách công việc đã ứng tuyển",
         "candidate_id": current_user.id,
