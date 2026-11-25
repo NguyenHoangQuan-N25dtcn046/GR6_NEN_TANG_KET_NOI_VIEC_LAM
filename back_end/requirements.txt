@@ -1,5 +1,12 @@
-fastapi>=0.115,<1
-uvicorn[standard]>=0.30,<1
-sqlalchemy>=2.0,<3
-pydantic-settings>=2.4,<3
-pymysql>=1.1,<2
+fastapi
+uvicorn[standard]
+sqlalchemy>=2.0,<2.1
+sqlalchemy_utils
+pydantic-settings
+pymysql
+PyJWT
+pwdlib[argon2]
+email-validator
+pathlib
+python-multipart
+alembic>=1.13,<2

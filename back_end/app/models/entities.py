@@ -1,6 +1,6 @@
 from datetime import datetime, date, timezone
 from decimal import Decimal
-from sqlalchemy import String, Text, ForeignKey, DateTime, Date, Numeric, Boolean, UniqueConstraint
+from sqlalchemy import String, Text, ForeignKey, DateTime, Date, Numeric, Boolean, UniqueConstraint, Column, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
@@ -37,9 +37,9 @@ class JobCategory(Base):
 
 class Job(Base):
     __tablename__ = "jobs"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    employer_id: Mapped[int] = mapped_column(ForeignKey("employer_profiles.id"), index=True)
-    category_id: Mapped[int | None] = mapped_column(ForeignKey("job_categories.id"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    employer_id: Mapped[int] = mapped_column(Integer, ForeignKey("employer_profiles.id"), index=True)
+    category_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("job_categories.id"))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     location: Mapped[str] = mapped_column(String(200))
@@ -47,6 +47,15 @@ class Job(Base):
     salary_max: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     deadline: Mapped[date | None] = mapped_column(Date)
+    job_status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    approval_status: Mapped[str] = mapped_column("approval", String(20), nullable=False, default="pending")
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    employer = relationship("EmployerProfile", lazy="joined")
+
+    @property
+    def company_name(self) -> str | None:
+        return self.employer.company_name if self.employer else None
 
 class Application(Base):
     __tablename__ = "applications"
@@ -58,3 +67,26 @@ class Application(Base):
     cover_letter: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    job = relationship("Job", lazy="joined")
+    candidate = relationship("CandidateProfile", lazy="joined")
+
+    @property
+    def job_title(self) -> str | None:
+        return self.job.title if self.job else None
+
+    @property
+    def candidate_name(self) -> str | None:
+        return self.candidate.full_name if self.candidate else None
+
+    @property
+    def company_name(self) -> str | None:
+        return self.job.employer.company_name if self.job and self.job.employer else None
+
+class RevokedToken(Base):
+    __tablename__ = "revoked_tokens"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    jti: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    revoke_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
