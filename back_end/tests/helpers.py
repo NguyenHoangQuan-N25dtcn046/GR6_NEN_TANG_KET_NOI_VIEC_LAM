@@ -25,6 +25,8 @@ def create_job(session, employer_id, title="Developer", description="Mô tả c�
         description=description,
         location=location,
         status=status,
+        approval_status="approved" if status in ("published", "closed") else status,
+        job_status="closed" if status == "closed" else "open",
         category_id=category_id,
         deadline=deadline,
     )

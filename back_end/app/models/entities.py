@@ -37,9 +37,9 @@ class JobCategory(Base):
 
 class Job(Base):
     __tablename__ = "jobs"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    employer_id: Mapped[int] = mapped_column(ForeignKey("employer_profiles.id"), index=True)
-    category_id: Mapped[int | None] = mapped_column(ForeignKey("job_categories.id"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    employer_id: Mapped[int] = mapped_column(Integer, ForeignKey("employer_profiles.id"), index=True)
+    category_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("job_categories.id"))
     title: Mapped[str] = mapped_column(String(200))
     description: Mapped[str] = mapped_column(Text)
     location: Mapped[str] = mapped_column(String(200))
@@ -47,6 +47,9 @@ class Job(Base):
     salary_max: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     deadline: Mapped[date | None] = mapped_column(Date)
+    job_status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
+    approval_status: Mapped[str] = mapped_column("approval", String(20), nullable=False, default="pending")
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     employer = relationship("EmployerProfile", lazy="joined")
 
@@ -82,24 +85,8 @@ class Application(Base):
 
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
-
-    id = Column(Integer, primary_key=True, index=True)
-
-    jti = Column(String(255), unique=True, nullable=False, index=True)
-
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id"),
-        nullable=False
-    )
-
-    revoked_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        nullable=False
-    )
-
-    expires_at = Column(
-        DateTime(timezone=True),
-        nullable=False
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    jti: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"),nullable=False)
+    revoke_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc),nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),nullable=False)

@@ -79,3 +79,11 @@ def download_application_cv(
 ):
     path = application_service.get_application_cv_path(db, job_id, application_id, current_user.id)
     return FileResponse(path, media_type="application/pdf", filename="cv.pdf")
+
+
+@router.get("/dashboard")
+def employer_dashboard(current_user: User = Depends(require_employer)):
+    return {
+        "message": "Chào mừng Employer",
+        "employer_id": current_user.id
+    }

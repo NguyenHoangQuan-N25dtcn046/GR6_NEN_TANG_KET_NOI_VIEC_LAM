@@ -112,6 +112,8 @@ def seed() -> None:
             salary_min=10000000,
             salary_max=25000000,
             status=status,
+            approval_status="approved" if status in ("published", "closed") else status,
+            job_status="closed" if status == "closed" else "open",
         )
         db.add(job)
         jobs.append(job)

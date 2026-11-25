@@ -57,3 +57,12 @@ def download_own_cv(
     if path is None:
         raise HTTPException(status_code=404, detail="Chưa có CV")
     return FileResponse(path, media_type="application/pdf", filename="cv.pdf")
+
+
+@router.get("/dashboard")
+def candidate_dashboard(current_user: User = Depends(require_candidate)):
+    return {
+        "message": "Chào mừng Candidate",
+        "user_id": current_user.id,
+        "role": "candidate"
+    }

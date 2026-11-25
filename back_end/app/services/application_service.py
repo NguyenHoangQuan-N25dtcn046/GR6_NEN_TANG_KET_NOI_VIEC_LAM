@@ -17,7 +17,7 @@ def apply_to_job(db: Session, job_id: int, payload: ApplicationCreate, user_id: 
     job = db.get(Job, job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Tin tuyển dụng không tồn tại")
-    if job.status != "published":
+    if job.approval_status != "approved" or job.job_status != "open":
         raise HTTPException(status_code=400, detail="Tin tuyển dụng chưa được công khai")
     if job.deadline is not None and job.deadline < date.today():
         raise HTTPException(status_code=400, detail="Tin tuyển dụng đã hết hạn")

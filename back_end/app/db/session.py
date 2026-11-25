@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from app.core.config import settings
+from sqlalchemy_utils import create_database, database_exists
 
 class Base(DeclarativeBase):
     pass
@@ -15,3 +16,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+def db_init():
+    if not database_exists(engine.url):
+        create_database(engine.url)

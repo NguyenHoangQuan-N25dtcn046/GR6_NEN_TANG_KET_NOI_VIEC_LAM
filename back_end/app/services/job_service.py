@@ -23,7 +23,7 @@ def list_public_jobs(
     offset: int = 0,
 ):
     """Danh sách tin công khai (chỉ published), hỗ trợ tìm kiếm + phân trang."""
-    stmt = select(Job).where(Job.status == "published")
+    stmt = select(Job).where(Job.approval_status == "approved", Job.job_status == "open")
     if q:
         like = f"%{q}%"
         stmt = stmt.where(or_(Job.title.ilike(like), Job.description.ilike(like), Job.location.ilike(like)))
@@ -37,7 +37,7 @@ def list_public_jobs(
 def get_public_job(db: Session, job_id: int) -> Job:
     """Chi tiết tin công khai; ẩn tin chưa duyệt (trả 404 như không tồn tại)."""
     job = db.get(Job, job_id)
-    if job is None or job.status != "published":
+    if job is None or job.approval_status != "approved" or job.job_status != "open":
         raise HTTPException(status_code=404, detail="Tin tuyển dụng không tồn tại")
     return job
 
@@ -71,8 +71,22 @@ def update_job(db: Session, job_id: int, payload: JobUpdate, user_id: int) -> Jo
     profile = get_employer_profile(db, user_id)
     job = get_owned_job(db, job_id, profile.id)
     data = payload.model_dump(exclude_unset=True)
+    if not data:
+        raise HTTPException(status_code=400, detail="Kh?ng c? d? li?u c?n c?p nh?t")
+    if any(data.get(field, "") is None for field in ("title", "description", "location", "status")):
+        raise HTTPException(status_code=422, detail="Kh?ng ???c ??t th?ng tin b?t bu?c th?nh null")
     if "category_id" in data:
         _ensure_category(db, data["category_id"])
+    requested_status = data.pop("status", None)
+    if data or requested_status == "pending":
+        job.approval_status = "pending"
+        job.rejection_reason = None
+    if requested_status is not None:
+        job.job_status = "closed" if requested_status == "closed" else "open"
+    job.status = (
+        "closed" if job.job_status == "closed" else
+        "published" if job.approval_status == "approved" else job.approval_status
+    )
     for key, value in data.items():
         setattr(job, key, value)
     db.commit()

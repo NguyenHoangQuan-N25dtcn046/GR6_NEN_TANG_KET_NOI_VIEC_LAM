@@ -11,9 +11,7 @@ router = APIRouter(
 
 
 @router.get("/dashboard")
-def admin_dashboard(
-    current_user: User = Depends(require_admin)
-):
+def admin_dashboard(current_user: User = Depends(require_admin)):
     return {
         "message": "Chào mừng Admin",
         "admin_id": current_user.id
@@ -21,9 +19,7 @@ def admin_dashboard(
 
 
 @router.get("/users")
-def get_all_users(
-    current_user: User = Depends(require_admin)
-):
+def get_all_users(current_user: User = Depends(require_admin)):
     return {
         "message": "Bạn có quyền xem danh sách người dùng",
         "data": []

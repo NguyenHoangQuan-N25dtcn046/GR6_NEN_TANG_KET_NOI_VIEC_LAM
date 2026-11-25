@@ -13,3 +13,4 @@ pathlib
 # testing
 pytest
 httpx
+alembic>=1.13,<2
