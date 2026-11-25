@@ -28,7 +28,45 @@
   font: inherit;
 }
 
+.tv4-live .tv-sign-in {
+  display: grid;
+  gap: 16px;
+  max-width: 440px;
+  margin-inline: auto;
+}
+
+.tv4-live .tv-sign-in-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.tv4-live .tv-sign-in > .tv-notice {
+  margin: 0;
+}
+
 .tv4-live :focus-visible {
   outline: 2px solid #167d72;
   outline-offset: 3px;
+}
+
+.tv4-live .tv-live-menu { display: contents; }
+.tv4-live .tv-live-menu-toggle { display: none; }
+.tv4-live .tv-live-nav a[aria-current="page"] { background: #1b3e37; color: #bdf5e9; }
+
+@media (max-width: 479px) {
+  .tv4-live .tv-nav nav.tv-live-nav { justify-content: space-between; gap: 8px; }
+  .tv4-live .tv-live-menu-toggle { display: inline-flex; }
+  .tv4-live .tv-live-menu { display: none; }
+  .tv4-live .tv-live-menu.is-open {
+    display: grid;
+    flex-basis: 100%;
+    gap: 4px;
+  }
+  .tv4-live .tv-live-job-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .tv4-live .tv-live-job-actions > :first-child { grid-column: 1 / -1; }
+  .tv4-live .tv-sign-in input { font-size: 16px; }
 }

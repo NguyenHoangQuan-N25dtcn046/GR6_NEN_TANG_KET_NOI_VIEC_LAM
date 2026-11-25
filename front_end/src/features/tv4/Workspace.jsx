@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Badge, Confirm, Heading, Notice } from '../tv4-preview/ui'
 import '../tv4-preview/preview.css'
 import './workspace.css'
@@ -78,7 +78,7 @@ function ActionLink({ to, children }) {
 function SignIn({ role, onSession }) {
   const action = useAction()
   return <Screen title={titleCase(role) + ' Sign In'}>
-    <form className="tv-form" onSubmit={event => {
+    <form className="tv-form tv-sign-in" aria-busy={action.pending} onSubmit={event => {
       event.preventDefault()
       const data = Object.fromEntries(new FormData(event.currentTarget))
       action.run(async () => {
@@ -91,7 +91,7 @@ function SignIn({ role, onSession }) {
         onSession({ token, user })
       })
     }}>
-      <fieldset disabled={action.pending} className="tv-grid">
+      <fieldset disabled={action.pending} className="tv-sign-in-fields">
         <label className="tv-field">Email <input name="email" type="email" autoComplete="username" required /></label>
         <label className="tv-field">Password <input name="password" type="password" autoComplete="current-password" required /></label>
       </fieldset>
@@ -121,7 +121,7 @@ function MyJobs({ api }) {
           {job.rejection_reason && <p className="tv-message">{job.rejection_reason}</p>}</div>
         <div className="tv-actions"><Badge tone={moderation === 'approved' ? 'active' : moderation}>{titleCase(moderation)}</Badge>
           <Badge tone={availability === 'open' ? 'active' : 'closed'}>{titleCase(availability)}</Badge></div>
-        <div className="tv-actions">
+        <div className="tv-actions tv-live-job-actions">
           <ActionLink to={'/employer/jobs/' + job.id + '/applications'}>View Applicants</ActionLink>
           <ActionLink to={'/employer/jobs/' + job.id + '/edit'}>Edit Job</ActionLink>
           {(availability === 'open' || moderation === 'approved') && <button type="button" disabled={action.pending}
@@ -304,9 +304,13 @@ function Unavailable({ title, children }) {
 }
 
 export default function Workspace({ role }) {
+  const { pathname } = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuButton = useRef(null)
   const [session, setSession] = useState(null)
   const [expired, setExpired] = useState(false)
   const logout = useAction()
+  useEffect(() => setMenuOpen(false), [pathname, session])
   const api = useCallback(async (path, options) => {
     try {
       return await request(path, { ...options, token: session.token })
@@ -320,16 +324,26 @@ export default function Workspace({ role }) {
   }, [session])
 
   return <main className="tv4-preview tv4-live">
-    <div className="tv-nav"><nav className="tv-wrap tv-live-nav" aria-label="TV4 workspace">
+    <div className="tv-nav"><nav className="tv-wrap tv-live-nav" aria-label="TV4 workspace" onKeyDown={event => {
+      if (event.key === 'Escape' && menuOpen && menuButton.current?.offsetWidth) {
+        event.preventDefault()
+        setMenuOpen(false)
+        menuButton.current.focus()
+      }
+    }}>
       <Link className="tv-brand" to="/">JobLink</Link>
-      <Link to="/employer/jobs">Employer</Link><Link to="/admin/jobs">Admin</Link>
+      <button type="button" className="tv-live-menu-toggle" ref={menuButton} aria-controls="tv4-live-menu"
+        aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}>Menu</button>
+      <div id="tv4-live-menu" className={'tv-live-menu' + (menuOpen ? ' is-open' : '')}>
+      <NavLink to="/employer/jobs">Employer</NavLink><NavLink to="/admin/jobs">Admin</NavLink>
       {session && <>
-        <Link to={role === 'employer' ? '/employer/company' : '/admin/users'}>{role === 'employer' ? 'Company Profile' : 'Manage Users'}</Link>
+        <NavLink to={role === 'employer' ? '/employer/company' : '/admin/users'}>{role === 'employer' ? 'Company Profile' : 'Manage Users'}</NavLink>
         <button type="button" disabled={logout.pending} onClick={() => logout.run(async () => {
           await api('/auth/logout', { method: 'POST' })
           setSession(null)
         })}>{logout.pending ? 'Signing out…' : 'Sign out'}</button>
       </>}
+      </div>
     </nav></div>
     <div className="tv-wrap"><Feedback action={logout} />{!session && expired && <Notice error>Session ended. Sign in again.</Notice>}</div>
     {!session ? <SignIn role={role} onSession={next => { setExpired(false); setSession(next) }} /> : <Routes>

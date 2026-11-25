@@ -91,6 +91,7 @@
 .tv4-preview button:disabled { opacity: .65; cursor: wait; }
 .tv4-preview :focus-visible { outline: 3px solid #359d8d; outline-offset: 3px; }
 .tv4-preview .tv-badge { border-radius: 100px; padding: 5px 10px; font-size: 13px; font-weight: 700; background: #eef2f1; color: #3d4b46; }
+.tv4-preview .tv-job-row .tv-badge { display: inline-block; white-space: nowrap; }
 .tv4-preview .tv-active, .tv4-preview .tv-shortlisted { background: var(--pale); color: #14574f; }
 .tv4-preview .tv-pending { background: #fff1ce; color: #71470c; }
 .tv4-preview .tv-rejected { background: #fbe8ea; color: #932738; }
@@ -180,7 +181,7 @@
   .tv4-preview .tv-title { min-height: 180px; }
   .tv4-preview .tv-row { grid-template-columns: minmax(0, 1fr) max-content minmax(0, 360px); gap: 20px; padding: 20px 24px; }
   .tv4-preview .tv-row .tv-actions { justify-self: end; justify-content: end; }
-  .tv4-preview .tv-job-row { grid-template-columns: minmax(0, 1fr) 112px 372px; }
+  .tv4-preview .tv-job-row { grid-template-columns: minmax(0, 1fr) minmax(112px, max-content) 372px; }
   .tv4-preview .tv-job-row .tv-job-actions {
     display: grid; grid-template-columns: 124px 144px 88px; align-items: center; justify-self: stretch;
   }
