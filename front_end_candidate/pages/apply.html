@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Ứng tuyển công việc trên Job Portal">
+  <title>Ứng tuyển công việc | Job Portal</title>
+  <link rel="stylesheet" href="../css/reset.css"><link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/global.css"><link rel="stylesheet" href="../css/layout.css"><link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/apply.css"><link rel="stylesheet" href="../css/transitions.css">
+</head>
+<body data-page="jobs" data-root="..">
+<div id="site-header"></div>
+<main>
+  <section class="page-banner"><div class="container"><h1>Ứng tuyển công việc</h1></div></section>
+  <section class="section"><div class="container apply-layout">
+    <div>
+      <div class="apply-demo-note" role="note"><strong>Ứng tuyển qua hệ thống</strong><p>Khi gửi, CV PDF được lưu vào hồ sơ trước, sau đó đơn ứng tuyển được gửi. Thông tin cá nhân lấy từ hồ sơ; chỉnh sửa tại trang Hồ sơ.</p></div>
+      <section id="apply-missing" class="apply-card" hidden aria-live="polite">
+        <h2>Không tìm thấy công việc</h2><p>Vui lòng chọn công việc từ danh sách trước khi ứng tuyển.</p><a class="btn" href="jobs.html">Xem danh sách việc làm</a>
+      </section>
+      <form id="apply-form" class="apply-card" novalidate>
+        <h2>Thông tin ứng tuyển</h2>
+        <p class="muted">Kiểm tra thông tin trước khi gửi hồ sơ.</p>
+        <div class="apply-field"><label for="apply-name">Họ và tên <span aria-hidden="true">*</span></label><input id="apply-name" name="fullName" type="text" autocomplete="name" maxlength="100" required placeholder="Nhập họ và tên"><small id="apply-name-error" class="apply-error" aria-live="polite"></small></div>
+        <div class="apply-field"><label for="apply-email">Email <span aria-hidden="true">*</span></label><input id="apply-email" name="email" type="email" autocomplete="email" maxlength="100" required placeholder="email@example.com"><small id="apply-email-error" class="apply-error" aria-live="polite"></small></div>
+        <div class="apply-field"><label for="apply-phone">Số điện thoại</label><input id="apply-phone" name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="Ví dụ: 0912345678"><small id="apply-phone-error" class="apply-error" aria-live="polite"></small></div>
+        <div class="apply-field"><label for="apply-cv">CV ứng tuyển (PDF, tối đa 5 MB) <span aria-hidden="true">*</span></label><input id="apply-cv" name="cv" type="file" accept=".pdf,application/pdf" required><p id="apply-cv-meta" class="muted apply-small">Chọn PDF để thay thế CV trong hồ sơ trước khi gửi đơn.</p><small id="apply-cv-error" class="apply-error" aria-live="polite"></small><a id="apply-cv-preview" href="#" target="_blank" rel="noopener noreferrer" hidden>Mở file CV đã chọn</a></div>
+        <div class="apply-field"><label for="apply-letter">Lời nhắn (Cover Letter) – không bắt buộc</label><textarea id="apply-letter" name="coverLetter" rows="6" maxlength="2000" placeholder="Giới thiệu ngắn gọn lý do bạn phù hợp với vị trí này..."></textarea><p class="muted apply-small"><span id="apply-letter-count">0</span>/2000 ký tự</p></div>
+        <div class="apply-actions"><button class="btn" type="button" id="apply-validate">Kiểm tra hồ sơ</button><button class="btn apply-send" type="submit" disabled>Gửi ứng tuyển</button></div>
+        <div id="apply-result" class="apply-result" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+    <aside class="apply-card apply-job-summary"><h2>Công việc đã chọn</h2><div id="apply-job-details" aria-live="polite"><p>Đang tải thông tin công việc...</p></div><a class="apply-back" href="jobs.html">← Quay lại danh sách việc làm</a></aside>
+  </div></section>
+</main>
+<div id="site-footer"></div>
+<script src="../js/apply.js" type="module"></script><script src="../js/transitions.js" type="module"></script>
+</body></html>
