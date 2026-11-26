@@ -19,13 +19,17 @@ class ProblemDetails(BaseModel):
     errors: list[dict] | None = None
 
 
-PROBLEM_RESPONSES = {
-    code: {
-        "description": HTTPStatus(code).phrase,
-        "content": {"application/problem+json": {"schema": ProblemDetails.model_json_schema()}},
+def problem_responses(*codes):
+    return {
+        code: {
+            "description": HTTPStatus(code).phrase,
+            "content": {"application/problem+json": {"schema": ProblemDetails.model_json_schema()}},
+        }
+        for code in codes
     }
-    for code in (400, 401, 403, 404, 405, 409, 422, 500)
-}
+
+
+PROBLEM_RESPONSES = problem_responses(400, 401, 403, 404, 405, 409, 422, 500)
 
 
 def problem(request, status, detail, headers=None, errors=None):
