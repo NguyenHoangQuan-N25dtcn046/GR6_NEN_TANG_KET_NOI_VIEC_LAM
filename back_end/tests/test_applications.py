@@ -49,7 +49,12 @@ def test_candidate_sees_only_own_applications(client, db_session):
     _, emp = create_user(db_session, "emp@test.com", "employer")
     job = create_job(db_session, emp.id, status="published")
 
-    _apply(client, job.id, cand_a)
+    created = _apply(client, job.id, cand_a)
+    location = created.headers["Location"]
+    detail = client.get(location, headers=auth_header(cand_a))
+    assert detail.status_code == 200
+    assert detail.json() == created.json()
+    assert client.get(location, headers=auth_header(cand_b)).status_code == 404
 
     resp = client.get("/api/v1/candidate/applications", headers=auth_header(cand_a))
     assert resp.status_code == 200

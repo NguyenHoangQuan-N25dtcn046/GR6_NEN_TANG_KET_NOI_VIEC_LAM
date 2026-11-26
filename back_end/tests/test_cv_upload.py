@@ -82,16 +82,45 @@ def test_employer_downloads_application_cv(client, db_session, tmp_path, monkeyp
     other_user, _ = create_user(db_session, "other@test.com", "employer")
     job = create_job(db_session, emp.id, status="published")
 
-    client.post("/api/v1/candidate/cv", files={"file": ("cv.pdf", PDF_BYTES, "application/pdf")}, headers=auth_header(cand))
-    app = client.post(
+    candidate_headers = auth_header(cand)
+    first = client.post(
+        "/api/v1/candidate/cv",
+        files={"file": ("cv.pdf", PDF_BYTES, "application/pdf")},
+        headers=candidate_headers,
+    )
+    assert first.status_code == 200
+
+    application = client.post(
         f"/api/v1/jobs/{job.id}/applications",
         json={"cover_letter": "Xin chào"},
-        headers=auth_header(cand),
-    ).json()
+        headers=candidate_headers,
+    )
+    assert application.status_code == 201
+    assert application.json()["cv_url"] == first.json()["cv_url"]
 
-    resp = client.get(f"/api/v1/employer/jobs/{job.id}/applications/{app['id']}/cv", headers=auth_header(emp_user))
+    replacement_pdf = PDF_BYTES.replace(b"%PDF-1.4", b"%PDF-1.7")
+    replacement = client.post(
+        "/api/v1/candidate/cv",
+        files={"file": ("cv.pdf", replacement_pdf, "application/pdf")},
+        headers=candidate_headers,
+    )
+    assert replacement.status_code == 200
+    assert replacement.json()["cv_url"] != application.json()["cv_url"]
+
+    url = f"/api/v1/employer/jobs/{job.id}/applications/{application.json()['id']}/cv"
+    resp = client.get(url, headers=auth_header(emp_user))
     assert resp.status_code == 200
-    assert resp.content.startswith(b"%PDF")
+    assert resp.content == PDF_BYTES
 
-    resp = client.get(f"/api/v1/employer/jobs/{job.id}/applications/{app['id']}/cv", headers=auth_header(other_user))
+    resp = client.get(url, headers=auth_header(other_user))
     assert resp.status_code == 403
+
+
+def test_cv_responses_are_documented(client):
+    paths = client.get("/openapi.json").json()["paths"]
+    candidate_cv = paths["/api/v1/candidate/cv"]
+    employer_cv = paths["/api/v1/employer/jobs/{job_id}/applications/{application_id}/cv"]
+    for endpoint in (candidate_cv, employer_cv):
+        assert set(endpoint["get"]["responses"]["200"]["content"]) == {"application/pdf"}
+    for code in ("413", "415"):
+        assert set(candidate_cv["post"]["responses"][code]["content"]) == {"application/problem+json"}

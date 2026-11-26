@@ -44,10 +44,10 @@ def save_cv(file: UploadFile, user_id: int) -> str:
     return f"/uploads/cv/{stored_name}"
 
 
-def resolve_cv_path(cv_url: str | None) -> Path | None:
+def resolve_cv_path(cv_url: str | None, user_id: int) -> Path | None:
     """Chuyển `cv_url` thành đường dẫn file thực trên đĩa.
 
-    Chặn path traversal và file không tồn tại; trả None nếu không hợp lệ.
+    Chỉ trả về tệp đã lưu cho đúng người dùng.
     """
     if not cv_url:
         return None
@@ -55,7 +55,7 @@ def resolve_cv_path(cv_url: str | None) -> Path | None:
     if not cv_url.startswith(prefix):
         return None
     stored_name = cv_url[len(prefix):]
-    if not re.fullmatch(r"[A-Za-z0-9_.-]+\.pdf", stored_name):
+    if not re.fullmatch(rf"{user_id}_[0-9a-f]{{32}}\.pdf", stored_name):
         return None
     path = _upload_root() / "cv" / stored_name
     return path if path.is_file() else None

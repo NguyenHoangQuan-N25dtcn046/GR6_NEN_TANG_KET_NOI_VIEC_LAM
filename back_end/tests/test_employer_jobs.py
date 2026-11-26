@@ -14,6 +14,9 @@ def test_employer_crud_jobs(client, db_session):
     assert resp.status_code == 201
     assert resp.json()["approval_status"] == "pending"
     job_id = resp.json()["id"]
+    detail = client.get(resp.headers["Location"], headers=headers)
+    assert detail.status_code == 200
+    assert detail.json()["id"] == job_id
 
     # Liệt kê tin của mình
     resp = client.get("/api/v1/employer/jobs", headers=headers)
@@ -70,3 +73,21 @@ def test_employer_rejects_invalid_category(client, db_session):
         headers=auth_header(emp_user),
     )
     assert resp.status_code == 400
+
+
+def test_delete_job_with_applications_returns_conflict(client, db_session):
+    emp_user, emp = create_user(db_session, "emp@test.com", "employer")
+    cand, _ = create_user(db_session, "cand@test.com", "candidate")
+    job = create_job(db_session, emp.id)
+    headers = auth_header(emp_user)
+    created = client.post(f"/api/v1/jobs/{job.id}/applications", json={}, headers=auth_header(cand))
+    assert created.status_code == 201
+
+    resp = client.delete(f"/api/v1/employer/jobs/{job.id}", headers=headers)
+    assert resp.status_code == 409
+    assert resp.headers["content-type"] == "application/problem+json"
+
+    resp = client.patch(f"/api/v1/jobs/{job.id}/status", json={"job_status": "closed"}, headers=headers)
+    assert resp.status_code == 200
+    applications = client.get(f"/api/v1/employer/jobs/{job.id}/applications", headers=headers)
+    assert [item["id"] for item in applications.json()] == [created.json()["id"]]

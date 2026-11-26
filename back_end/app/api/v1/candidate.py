@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.core.errors import problem_responses
 from app.core.permissions import require_candidate
 from app.db.session import get_db
 from app.models.entities import User
@@ -43,7 +44,19 @@ def get_my_applications(
     return application_service.list_candidate_applications(db, current_user.id)
 
 
-@router.post("/cv", response_model=CandidateProfileOut, summary="Upload CV PDF")
+@router.get("/applications/{application_id}", response_model=ApplicationOut)
+def get_my_application(
+    application_id: int,
+    current_user: User = Depends(require_candidate),
+    db: Session = Depends(get_db),
+):
+    return application_service.get_candidate_application(db, application_id, current_user.id)
+
+
+@router.post(
+    "/cv", response_model=CandidateProfileOut, summary="Upload CV PDF",
+    responses=problem_responses(413, 415),
+)
 def upload_cv(
     file: UploadFile = File(...),
     current_user: User = Depends(require_candidate),
@@ -52,13 +65,16 @@ def upload_cv(
     return profile_service.upload_cv(db, file, current_user.id)
 
 
-@router.get("/cv", summary="Tải CV của tôi")
+@router.get(
+    "/cv", response_class=FileResponse, summary="Tải CV của tôi",
+    responses={200: {"content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}},
+)
 def download_own_cv(
     current_user: User = Depends(require_candidate),
     db: Session = Depends(get_db),
 ):
     profile = profile_service.get_profile(db, current_user.id)
-    path = resolve_cv_path(profile.cv_url)
+    path = resolve_cv_path(profile.cv_url, current_user.id)
     if path is None:
         raise HTTPException(status_code=404, detail="Chưa có CV")
     return FileResponse(path, media_type="application/pdf", filename="cv.pdf")

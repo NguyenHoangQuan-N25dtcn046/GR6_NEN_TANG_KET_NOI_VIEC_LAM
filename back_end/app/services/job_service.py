@@ -2,9 +2,10 @@ from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.entities import Job, JobCategory
+from app.models.entities import Application, Job, JobCategory
 from app.schemas.job import JobCreate
 from app.services.ownership import get_employer_profile, get_owned_job
 
@@ -76,5 +77,18 @@ def delete_job(db: Session, job_id: int, user_id: int) -> None:
     """Xóa tin tuyển dụng của chính mình."""
     profile = get_employer_profile(db, user_id)
     job = get_owned_job(db, job_id, profile.id)
+    applications = select(Application.id).where(Application.job_id == job_id).limit(1)
+    conflict = "Tin tuyển dụng đã có đơn ứng tuyển. Vui lòng đóng tin."
+
+    if db.scalar(applications) is not None:
+        raise HTTPException(status_code=409, detail=conflict)
+
     db.delete(job)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # A concurrent submission can commit after the initial check.
+        if db.scalar(applications) is not None:
+            raise HTTPException(status_code=409, detail=conflict)
+        raise

@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models.entities import Application, CandidateProfile, Job
+from app.models.entities import Application, Job
 from app.schemas.application import ApplicationCreate, ApplicationStatusUpdate
 from app.services.cv_service import resolve_cv_path
 from app.services.ownership import get_candidate_profile, get_employer_profile, get_owned_job
@@ -24,25 +24,30 @@ def apply_to_job(db: Session, job_id: int, payload: ApplicationCreate, user_id: 
 
     profile = get_candidate_profile(db, user_id)
 
-    duplicate = db.scalar(
-        select(Application.id).where(Application.job_id == job_id, Application.candidate_id == profile.id)
+    candidate_id = profile.id
+    duplicate = select(Application.id).where(
+        Application.job_id == job_id, Application.candidate_id == candidate_id
     )
-    if duplicate is not None:
+    if db.scalar(duplicate) is not None:
         raise HTTPException(status_code=409, detail="Bạn đã ứng tuyển công việc này")
 
     application = Application(
         job_id=job_id,
-        candidate_id=profile.id,
+        candidate_id=candidate_id,
         cover_letter=payload.cover_letter,
-        cv_url=payload.cv_url,
+        cv_url=profile.cv_url if resolve_cv_path(profile.cv_url, user_id) else None,
     )
     db.add(application)
     try:
         db.commit()
-        db.refresh(application)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Bạn đã ứng tuyển công việc này")
+        if db.scalar(duplicate) is not None:
+            raise HTTPException(status_code=409, detail="Bạn đã ứng tuyển công việc này")
+        if db.get(Job, job_id) is None:
+            raise HTTPException(status_code=404, detail="Tin tuyển dụng không tồn tại")
+        raise
+    db.refresh(application)
     return application
 
 
@@ -55,6 +60,14 @@ def list_candidate_applications(db: Session, user_id: int):
         .order_by(Application.applied_at.desc())
     )
     return db.scalars(stmt).all()
+
+
+def get_candidate_application(db: Session, application_id: int, user_id: int) -> Application:
+    profile = get_candidate_profile(db, user_id)
+    application = db.get(Application, application_id)
+    if application is None or application.candidate_id != profile.id:
+        raise HTTPException(status_code=404, detail="Đơn ứng tuyển không tồn tại")
+    return application
 
 
 def list_job_applications(db: Session, job_id: int, user_id: int):
@@ -92,12 +105,8 @@ def get_application_cv_path(db: Session, job_id: int, application_id: int, user_
     if application is None or application.job_id != job.id:
         raise HTTPException(status_code=404, detail="Đơn ứng tuyển không tồn tại")
 
-    cv_url = application.cv_url
-    if not cv_url:
-        candidate = db.get(CandidateProfile, application.candidate_id)
-        cv_url = candidate.cv_url if candidate else None
-
-    path = resolve_cv_path(cv_url)
+    candidate = application.candidate
+    path = resolve_cv_path(application.cv_url, candidate.user_id) if candidate else None
     if path is None:
         raise HTTPException(status_code=404, detail="Ứng viên chưa có CV")
     return path
