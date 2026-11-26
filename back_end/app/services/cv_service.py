@@ -1,6 +1,10 @@
 import re
 import uuid
+from io import BytesIO
 from pathlib import Path
+from xml.etree import ElementTree
+from zipfile import BadZipFile, ZipFile
+from zlib import error as DecompressionError
 
 from fastapi import HTTPException, UploadFile
 
@@ -24,11 +28,34 @@ def _upload_root() -> Path:
     return root
 
 
+def _is_docx(content: bytes) -> bool:
+    try:
+        with ZipFile(BytesIO(content)) as archive:
+            required = ("[Content_Types].xml", "_rels/.rels", "word/document.xml")
+            if any(archive.getinfo(name).file_size == 0 for name in required):
+                return False
+            manifest = archive.getinfo("[Content_Types].xml")
+            if manifest.file_size > 256 * 1024:
+                return False
+            root = ElementTree.fromstring(archive.read(manifest))
+    except (BadZipFile, KeyError, OSError, RuntimeError, NotImplementedError, DecompressionError, ElementTree.ParseError):
+        return False
+
+    namespace = "http://schemas.openxmlformats.org/package/2006/content-types"
+    document_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
+    return any(
+        part.get("PartName") == "/word/document.xml" and part.get("ContentType") == document_type
+        for part in root.findall(f"{{{namespace}}}Override")
+    )
+
+
 def _detect_format(filename: str, content_type: str, content: bytes) -> str:
     """Xác định định dạng (pdf/docx) dựa trên đuôi + MIME + magic bytes."""
     ext = ("." + filename.rsplit(".", 1)[-1]) if "." in filename else ""
     for fmt, spec in _FORMATS.items():
         if ext == spec["ext"] and content_type == spec["mime"] and content.startswith(spec["magic"]):
+            if fmt == "docx" and not _is_docx(content):
+                break
             return fmt
     raise HTTPException(status_code=415, detail="Chỉ chấp nhận file PDF hoặc DOCX hợp lệ")
 
@@ -38,9 +65,8 @@ def save_cv(file: UploadFile, user_id: int) -> str:
 
     Trả về đường dẫn tham chiếu (không lưu nhị phân vào DB).
     """
-    content = file.file.read()
-
     max_bytes = settings.MAX_CV_SIZE_MB * 1024 * 1024
+    content = file.file.read(max_bytes + 1)
     if len(content) > max_bytes:
         raise HTTPException(status_code=413, detail=f"CV vượt quá {settings.MAX_CV_SIZE_MB}MB")
 

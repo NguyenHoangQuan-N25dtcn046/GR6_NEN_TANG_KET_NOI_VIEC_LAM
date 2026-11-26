@@ -1,9 +1,40 @@
+from io import BytesIO
+from zipfile import ZipFile
+
+import pytest
+
 from app.core.config import settings
 
 from tests.helpers import auth_header, create_job, create_user
 
 PDF_BYTES = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
-DOCX_BYTES = b"PK\x03\x04" + b"\x00" * 24  # DOCX là file ZIP, bắt đầu bằng PK\x03\x04
+DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+def make_docx():
+    output = BytesIO()
+    with ZipFile(output, "w") as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Override PartName="/word/document.xml" '
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            '</Types>',
+        )
+        archive.writestr(
+            "_rels/.rels",
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Target="word/document.xml" '
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/>'
+            '</Relationships>',
+        )
+        archive.writestr(
+            "word/document.xml",
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r><w:t>Example CV</w:t></w:r></w:p></w:body></w:document>',
+        )
+    return output.getvalue()
 
 
 def test_upload_valid_pdf(client, db_session, tmp_path, monkeypatch):
@@ -49,22 +80,37 @@ def test_upload_valid_docx(client, db_session, tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     cand, _ = create_user(db_session, "cand@test.com", "candidate")
 
+    docx = make_docx()
+    headers = auth_header(cand)
     resp = client.post(
         "/api/v1/candidate/cv",
-        files={"file": ("cv.docx", DOCX_BYTES, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
-        headers=auth_header(cand),
+        files={"file": ("cv.docx", docx, DOCX_MIME)},
+        headers=headers,
     )
     assert resp.status_code == 200
     assert resp.json()["cv_url"].endswith(".docx")
 
+    response = client.get("/api/v1/candidate/cv", headers=headers)
+    assert response.headers["content-type"] == DOCX_MIME
+    assert "cv.docx" in response.headers["content-disposition"]
+    assert response.content == docx
 
-def test_reject_fake_docx(client, db_session, tmp_path, monkeypatch):
+
+def make_plain_zip():
+    output = BytesIO()
+    with ZipFile(output, "w") as archive:
+        archive.writestr("log.txt", "plain text")
+    return output.getvalue()
+
+
+@pytest.mark.parametrize("payload", [b"not a docx", make_plain_zip()])
+def test_reject_fake_docx(client, db_session, tmp_path, monkeypatch, payload):
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
     cand, _ = create_user(db_session, "cand@test.com", "candidate")
 
     resp = client.post(
         "/api/v1/candidate/cv",
-        files={"file": ("cv.docx", b"not a docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        files={"file": ("cv.docx", payload, DOCX_MIME)},
         headers=auth_header(cand),
     )
     assert resp.status_code == 415

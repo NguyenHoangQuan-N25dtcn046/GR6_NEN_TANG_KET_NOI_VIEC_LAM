@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -36,7 +37,15 @@ def create_education(db: Session, payload: EducationCreate, user_id: int) -> Can
 def update_education(db: Session, education_id: int, payload: EducationUpdate, user_id: int) -> CandidateEducation:
     profile = get_candidate_profile(db, user_id)
     edu = _get_owned(db, education_id, profile.id)
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    values = {field: getattr(edu, field) for field in EducationCreate.model_fields}
+    values.update(changes)
+    try:
+        EducationCreate.model_validate(values)
+    except ValidationError as error:
+        raise HTTPException(status_code=422, detail=error.errors()[0]["msg"])
+
+    for key, value in changes.items():
         setattr(edu, key, value)
     db.commit()
     db.refresh(edu)

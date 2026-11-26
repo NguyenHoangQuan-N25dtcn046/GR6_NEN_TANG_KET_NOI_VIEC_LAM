@@ -25,6 +25,19 @@ npm run dev
 ```
 Web: http://localhost:5173
 
+## Nâng cấp database đã dùng
+
+Phiên bản này thêm cột `jobs.work_mode` và hai bảng hồ sơ ứng viên.
+Với database hiện có, sao lưu và dừng backend trước khi cập nhật. Chạy lệnh
+sau từ thư mục `back_end` với cùng `DATABASE_URL` cấu hình cho backend:
+
+```bash
+python -m scripts.migrate_job_fields
+```
+
+Sau đó khởi động lại backend để tạo hai bảng mới. Có thể chạy migration
+nhiều lần. Với database mới, backend tạo đầy đủ bảng khi khởi động.
+
 ## Database MySQL
 Mặc định backend dùng SQLite để có thể chạy ngay. Khi dùng MySQL, tạo database `job_platform`, cài MySQL server và sửa `DATABASE_URL` trong `back_end/.env`:
 `mysql+pymysql://root:password@localhost:3306/job_platform?charset=utf8mb4`

@@ -1,5 +1,4 @@
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -11,15 +10,13 @@ class ExperienceBase(BaseModel):
     end_date: date | None = None
     description: str | None = None
 
+
+class ExperienceCreate(ExperienceBase):
     @model_validator(mode="after")
     def _check_dates(self):
         if self.end_date is not None and self.start_date > self.end_date:
             raise ValueError("Ngày bắt đầu phải trước ngày kết thúc")
         return self
-
-
-class ExperienceCreate(ExperienceBase):
-    pass
 
 
 class ExperienceUpdate(BaseModel):
@@ -28,12 +25,6 @@ class ExperienceUpdate(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     description: str | None = None
-
-    @model_validator(mode="after")
-    def _check_dates(self):
-        if self.start_date is not None and self.end_date is not None and self.start_date > self.end_date:
-            raise ValueError("Ngày bắt đầu phải trước ngày kết thúc")
-        return self
 
 
 class ExperienceOut(ExperienceBase):
