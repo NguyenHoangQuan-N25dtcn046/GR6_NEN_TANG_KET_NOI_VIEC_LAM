@@ -7,7 +7,8 @@ from app.db.session import get_db
 from app.models.entities import User
 from app.schemas.application import ApplicationStatusUpdate, EmployerApplicationOut
 from app.schemas.job import JobCreate, JobResponse
-from app.services import application_service, job_service
+from app.schemas.profile import EmployerProfileOut, EmployerProfileUpdate
+from app.services import application_service, job_service, profile_service
 from app.services.cv_service import CV_DOWNLOAD_RESPONSES
 from app.services.ownership import get_employer_profile, get_owned_job
 
@@ -17,6 +18,20 @@ router = APIRouter(prefix="/employer", tags=["Employer"])
 @router.get("/dashboard")
 def employer_dashboard(current_user: User = Depends(require_employer)):
     return {"message": "Chào mừng Employer", "employer_id": current_user.id}
+
+
+@router.get("/profile", response_model=EmployerProfileOut)
+def get_company_profile(current_user: User = Depends(require_employer), db: Session = Depends(get_db)):
+    return get_employer_profile(db, current_user.id)
+
+
+@router.patch("/profile", response_model=EmployerProfileOut)
+def update_company_profile(
+    payload: EmployerProfileUpdate,
+    current_user: User = Depends(require_employer),
+    db: Session = Depends(get_db),
+):
+    return profile_service.update_company_profile(db, payload, current_user.id)
 
 
 @router.get("/jobs", response_model=list[JobResponse], summary="Danh sách tin của tôi")

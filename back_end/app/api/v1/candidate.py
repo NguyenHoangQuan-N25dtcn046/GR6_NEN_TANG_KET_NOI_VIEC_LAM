@@ -9,8 +9,9 @@ from app.models.entities import User
 from app.schemas.application import ApplicationOut
 from app.schemas.education import EducationCreate, EducationOut, EducationUpdate
 from app.schemas.experience import ExperienceCreate, ExperienceOut, ExperienceUpdate
+from app.schemas.job import PublicJobDetail
 from app.schemas.profile import CandidateProfileOut, CandidateProfileUpdate
-from app.services import application_service, education_service, experience_service, profile_service
+from app.services import application_service, education_service, experience_service, job_service, profile_service
 from app.services.cv_service import CV_DOWNLOAD_RESPONSES, cv_filename, resolve_cv_path
 
 router = APIRouter(prefix="/candidate", tags=["Candidate"])
@@ -131,6 +132,21 @@ def get_my_application(
     db: Session = Depends(get_db),
 ):
     return application_service.get_candidate_application(db, application_id, current_user.id)
+
+
+@router.get("/saved-jobs", response_model=list[PublicJobDetail])
+def list_saved_jobs(current_user: User = Depends(require_candidate), db: Session = Depends(get_db)):
+    return job_service.list_saved_jobs(db, current_user.id)
+
+
+@router.put("/saved-jobs/{job_id}", status_code=204)
+def save_job(job_id: int, current_user: User = Depends(require_candidate), db: Session = Depends(get_db)):
+    job_service.save_job(db, job_id, current_user.id)
+
+
+@router.delete("/saved-jobs/{job_id}", status_code=204)
+def remove_saved_job(job_id: int, current_user: User = Depends(require_candidate), db: Session = Depends(get_db)):
+    job_service.remove_saved_job(db, job_id, current_user.id)
 
 
 # ---- CV ----

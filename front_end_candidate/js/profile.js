@@ -1,10 +1,10 @@
-import {api,me} from './api.js';
+import {api,clearToken,me} from './api.js';
+import { loadProfileRecords } from './profile-records.js';
 import { renderLayout } from './components/layout.js';
 renderLayout();
 
-// PROF-02: Dữ liệu mẫu phục vụ UI. KHÔNG phải thông tin tài khoản đã đăng nhập.
 // Không lưu thông tin cá nhân vào localStorage khi chưa có quyết định về bảo mật.
-let profile={fullName:'',email:'',phone:'',skills:[],experience:'Backend chưa hỗ trợ',education:'Backend chưa hỗ trợ'};
+let profile={fullName:'',email:'',phone:'',skills:[]};
 const byId = id => document.getElementById(id);
 const form = byId('profile-form');
 const view = byId('profile-view');
@@ -18,8 +18,6 @@ function render() {
   byId('view-fullname').textContent = displayText(profile.fullName);
   byId('view-email').textContent = displayText(profile.email);
   byId('view-phone').textContent = displayText(profile.phone);
-  byId('view-experience').textContent = displayText(profile.experience);
-  byId('view-education').textContent = displayText(profile.education);
   byId('side-name').textContent = displayText(profile.fullName);
   byId('side-email').textContent = displayText(profile.email);
   byId('profile-avatar').textContent = initials(profile.fullName) || 'UV';
@@ -39,8 +37,6 @@ function fillForm() {
   byId('profile-email').value=profile.email;
   byId('phone').value=profile.phone;
   byId('skills').value=profile.skills.join(', ');
-  byId('experience').value=profile.experience;
-  byId('education').value=profile.education;
   byId('full-name-error').textContent='';
   byId('phone-error').textContent='';
   byId('full-name').removeAttribute('aria-invalid');
@@ -59,7 +55,7 @@ form.addEventListener('submit',async event=>{
   const name=byId('full-name').value.trim().replace(/\s+/g,' ');
   const phone=byId('phone').value.trim();
   let valid=true;
-  if(name.length<2){byId('full-name-error').textContent='Họ tên cần ít nhất 2 ký tự.';byId('full-name').setAttribute('aria-invalid','true');valid=false;}
+  if(!name){byId('full-name-error').textContent='Vui lòng nhập họ tên.';byId('full-name').setAttribute('aria-invalid','true');valid=false;}
   else{byId('full-name-error').textContent='';byId('full-name').removeAttribute('aria-invalid');}
   if(phone && !/^[+\d][\d\s().-]{6,19}$/.test(phone)){byId('phone-error').textContent='Vui lòng nhập số điện thoại hợp lệ.';byId('phone').setAttribute('aria-invalid','true');valid=false;}
   else{byId('phone-error').textContent='';byId('phone').removeAttribute('aria-invalid');}
@@ -69,5 +65,27 @@ form.addEventListener('submit',async event=>{
   try{const data=await api('/candidate/profile',{method:'PATCH',auth:true,body:{full_name:name,phone,skills:skills.join(', ')}});assign(data);render();toggleEdit(false);showStatus('Đã lưu hồ sơ trên hệ thống.','success');}catch(e){showStatus(e.message,'error');}finally{button.disabled=false;}
 });
 function assign(data){profile={...profile,fullName:data.full_name,phone:data.phone||'',skills:(data.skills||'').split(',').map(x=>x.trim()).filter(Boolean)};}
-edit.disabled=true;byId('experience').disabled=true;byId('education').disabled=true;
-try{const u=await me();profile.email=u.email;assign(await api('/candidate/profile',{auth:true}));render();edit.disabled=false;}catch(e){showStatus(e.message,'error');}
+const passwordForm = byId('password-form');
+passwordForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const status = byId('password-status');
+  const { current_password, new_password, confirmation } = Object.fromEntries(new FormData(passwordForm));
+  status.textContent = '';
+  if (new_password !== confirmation) {
+    status.textContent = 'Mật khẩu nhập lại chưa trùng khớp.';
+    return;
+  }
+  const button = passwordForm.querySelector('[type="submit"]');
+  button.disabled = true;
+  try {
+    await api('/auth/password', { method: 'PATCH', auth: true, body: { current_password, new_password } });
+    clearToken();
+    window.location.replace('login.html?passwordChanged=1');
+  } catch (error) {
+    status.textContent = error.message;
+    button.disabled = false;
+  }
+});
+
+edit.disabled=true;
+try{const u=await me();profile.email=u.email;assign(await api('/candidate/profile',{auth:true}));render();edit.disabled=false;byId('account-security').hidden=false;await loadProfileRecords();}catch(e){showStatus(e.message,'error');}

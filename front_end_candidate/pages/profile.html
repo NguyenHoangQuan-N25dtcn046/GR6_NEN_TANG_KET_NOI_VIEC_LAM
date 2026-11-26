@@ -1,82 +1,213 @@
 <!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Xem và cập nhật hồ sơ ứng viên Job Portal">
-  <title>Hồ sơ ứng viên | Job Portal</title>
-  <link rel="stylesheet" href="../css/reset.css">
-  <link rel="stylesheet" href="../css/variables.css">
-  <link rel="stylesheet" href="../css/global.css">
-  <link rel="stylesheet" href="../css/layout.css">
-  <link rel="stylesheet" href="../css/components.css">
-  <link rel="stylesheet" href="../css/profile.css">
-  <link rel="stylesheet" href="../css/transitions.css">
-</head>
-<body data-page="profile" data-root="..">
-  <div id="site-header"></div>
-  <main class="profile-main">
-    <section class="profile-heading container" aria-labelledby="profile-title">
-      <div>
-        <span class="profile-eyebrow">KHÔNG GIAN ỨNG VIÊN</span>
-        <h1 id="profile-title">Hồ sơ cá nhân</h1>
-        <p>Quản lý thông tin của bạn để sẵn sàng cho các cơ hội nghề nghiệp.</p>
-      </div>
-      <span class="demo-label" title="Hồ sơ từ API">● Dữ liệu hệ thống</span>
-    </section>
-    <div class="container profile-grid">
-      <aside class="profile-sidebar" aria-label="Điều hướng tài khoản ứng viên">
-        <div class="profile-avatar-card">
-          <div class="profile-avatar" id="profile-avatar" aria-hidden="true">NA</div>
-          <h2 id="side-name">Nguyễn An</h2>
-          <p id="side-email">ungvien@example.com</p>
-          <div class="completion-bar" role="progressbar" aria-label="Mức độ hoàn thiện hồ sơ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="completion-progress"></span></div>
-          <span class="completion-text" id="completion-text">Đang tính mức hoàn thiện</span>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Xem và cập nhật hồ sơ ứng viên Job Portal"
+    />
+    <title>Hồ sơ ứng viên | Job Portal</title>
+    <link rel="stylesheet" href="../css/reset.css" />
+    <link rel="stylesheet" href="../css/variables.css" />
+    <link rel="stylesheet" href="../css/global.css" />
+    <link rel="stylesheet" href="../css/layout.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/profile.css" />
+    <link rel="stylesheet" href="../css/transitions.css" />
+  </head>
+  <body data-page="profile" data-root="..">
+    <div id="site-header"></div>
+    <main class="profile-main">
+      <section
+        class="profile-heading container"
+        aria-labelledby="profile-title"
+      >
+        <div>
+          <span class="profile-eyebrow">KHÔNG GIAN ỨNG VIÊN</span>
+          <h1 id="profile-title">Hồ sơ cá nhân</h1>
+          <p>
+            Quản lý thông tin của bạn để sẵn sàng cho các cơ hội nghề nghiệp.
+          </p>
         </div>
-        <nav class="profile-menu" aria-label="Quản lý hồ sơ">
-          <a href="profile.html" class="is-active" aria-current="page">◉ <span>Thông tin cá nhân</span></a>
-          <a href="cv.html">▤ <span>CV của tôi</span></a>
-          <a href="applications.html">▣ <span>Lịch sử ứng tuyển</span></a>
-          <a href="jobs.html">⌕ <span>Tìm việc làm</span></a>
-        </nav>
-        <p class="profile-aside-note">Học vấn và kinh nghiệm chưa được API hỗ trợ.</p>
-      </aside>
-      <div class="profile-content">
-        <section class="profile-card" aria-labelledby="overview-title">
-          <div class="profile-card-header">
-            <div><span class="profile-section-number">01 / TỔNG QUAN</span><h2 id="overview-title">Thông tin ứng viên</h2><p>Thông tin cơ bản hiển thị trên hồ sơ của bạn.</p></div>
-            <button class="btn profile-edit" id="start-edit" type="button">✎ Chỉnh sửa hồ sơ</button>
-          </div>
-          <div class="profile-summary" id="profile-view">
-            <div class="profile-info-item"><span>Họ và tên</span><strong id="view-fullname"></strong></div>
-            <div class="profile-info-item"><span>Email đăng nhập</span><strong id="view-email"></strong></div>
-            <div class="profile-info-item"><span>Số điện thoại</span><strong id="view-phone"></strong></div>
-            <div class="profile-info-item profile-info-wide"><span>Kỹ năng</span><div class="profile-chips" id="view-skills"></div></div>
-            <div class="profile-info-item profile-info-wide"><span>Kinh nghiệm làm việc</span><p id="view-experience"></p></div>
-            <div class="profile-info-item profile-info-wide"><span>Học vấn</span><p id="view-education"></p></div>
-          </div>
-          <form id="profile-form" class="profile-form" hidden novalidate>
-            <div class="profile-form-grid">
-              <div class="profile-field"><label for="full-name">Họ và tên <span>*</span></label><input id="full-name" name="fullName" autocomplete="name" maxlength="100" required aria-describedby="full-name-error"><small id="full-name-error" class="profile-field-error"></small></div>
-              <div class="profile-field"><label for="profile-email">Email đăng nhập</label><input id="profile-email" name="email" type="email" readonly aria-describedby="email-help"><small id="email-help" class="profile-hint">Email chỉ xem; thay đổi tài khoản thuộc phân hệ Auth.</small></div>
-              <div class="profile-field"><label for="phone">Số điện thoại</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="20" placeholder="Ví dụ: 0912 345 678" aria-describedby="phone-error"><small id="phone-error" class="profile-field-error"></small></div>
-              <div class="profile-field profile-field-wide"><label for="skills">Kỹ năng</label><input id="skills" name="skills" maxlength="500" placeholder="HTML, CSS, JavaScript" aria-describedby="skills-help"><small id="skills-help" class="profile-hint">Ngăn cách mỗi kỹ năng bằng dấu phẩy.</small></div>
-              <div class="profile-field profile-field-wide"><label for="experience">Kinh nghiệm làm việc</label><textarea id="experience" name="experience" rows="4" maxlength="2000" placeholder="Mô tả kinh nghiệm, dự án đã thực hiện..."></textarea></div>
-              <div class="profile-field profile-field-wide"><label for="education">Học vấn</label><textarea id="education" name="education" rows="3" maxlength="1000" placeholder="Trường, ngành học, thời gian..."></textarea></div>
+        <span class="demo-label" title="Hồ sơ từ API">● Dữ liệu hệ thống</span>
+      </section>
+      <div class="container profile-grid">
+        <aside
+          class="profile-sidebar"
+          aria-label="Điều hướng tài khoản ứng viên"
+        >
+          <div class="profile-avatar-card">
+            <div class="profile-avatar" id="profile-avatar" aria-hidden="true">
+              NA
             </div>
-            <div class="profile-form-actions"><button type="button" id="cancel-edit" class="profile-cancel">Hủy</button><button type="submit" class="btn">Lưu thay đổi</button></div>
-          </form>
-          <p id="profile-status" class="profile-status" role="status" aria-live="polite"></p>
-        </section>
-        <section class="profile-card profile-next" aria-labelledby="next-title">
-          <div><span class="profile-section-number">02 / HOÀN THIỆN HỒ SƠ</span><h2 id="next-title">CV &amp; Ứng tuyển</h2><p>Bước tiếp theo là bổ sung CV để tăng khả năng tiếp cận nhà tuyển dụng.</p></div>
-          <a class="btn btn--outline" href="cv.html">Quản lý CV ↗</a>
-        </section>
+            <h2 id="side-name">Nguyễn An</h2>
+            <p id="side-email">ungvien@example.com</p>
+            <div
+              class="completion-bar"
+              role="progressbar"
+              aria-label="Mức độ hoàn thiện hồ sơ"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <span id="completion-progress"></span>
+            </div>
+            <span class="completion-text" id="completion-text"
+              >Đang tính mức hoàn thiện</span
+            >
+          </div>
+          <nav class="profile-menu" aria-label="Quản lý hồ sơ">
+            <a href="profile.html" class="is-active" aria-current="page"
+              >◉ <span>Thông tin cá nhân</span></a
+            >
+            <a href="cv.html">▤ <span>CV của tôi</span></a>
+            <a href="applications.html">▣ <span>Lịch sử ứng tuyển</span></a>
+            <a href="saved-jobs.html">☆ <span>Việc làm đã lưu</span></a>
+            <a href="jobs.html">⌕ <span>Tìm việc làm</span></a>
+          </nav>
+        </aside>
+        <div class="profile-content">
+          <section class="profile-card" aria-labelledby="overview-title">
+            <div class="profile-card-header">
+              <div>
+                <span class="profile-section-number">01 / TỔNG QUAN</span>
+                <h2 id="overview-title">Thông tin ứng viên</h2>
+                <p>Thông tin cơ bản hiển thị trên hồ sơ của bạn.</p>
+              </div>
+              <button class="btn profile-edit" id="start-edit" type="button">
+                ✎ Chỉnh sửa hồ sơ
+              </button>
+            </div>
+            <div class="profile-summary" id="profile-view">
+              <div class="profile-info-item">
+                <span>Họ và tên</span><strong id="view-fullname"></strong>
+              </div>
+              <div class="profile-info-item">
+                <span>Email đăng nhập</span><strong id="view-email"></strong>
+              </div>
+              <div class="profile-info-item">
+                <span>Số điện thoại</span><strong id="view-phone"></strong>
+              </div>
+              <div class="profile-info-item profile-info-wide">
+                <span>Kỹ năng</span>
+                <div class="profile-chips" id="view-skills"></div>
+              </div>
+            </div>
+            <form id="profile-form" class="profile-form" hidden novalidate>
+              <div class="profile-form-grid">
+                <div class="profile-field">
+                  <label for="full-name">Họ và tên <span>*</span></label
+                  ><input
+                    id="full-name"
+                    name="fullName"
+                    autocomplete="name"
+                    maxlength="150"
+                    required
+                    aria-describedby="full-name-error"
+                  /><small
+                    id="full-name-error"
+                    class="profile-field-error"
+                  ></small>
+                </div>
+                <div class="profile-field">
+                  <label for="profile-email">Email đăng nhập</label
+                  ><input
+                    id="profile-email"
+                    name="email"
+                    type="email"
+                    readonly
+                    aria-describedby="email-help"
+                  /><small id="email-help" class="profile-hint"
+                    >Email chỉ xem; thay đổi tài khoản thuộc phân hệ
+                    Auth.</small
+                  >
+                </div>
+                <div class="profile-field">
+                  <label for="phone">Số điện thoại</label
+                  ><input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    autocomplete="tel"
+                    maxlength="20"
+                    placeholder="Ví dụ: 0912 345 678"
+                    aria-describedby="phone-error"
+                  /><small id="phone-error" class="profile-field-error"></small>
+                </div>
+                <div class="profile-field profile-field-wide">
+                  <label for="skills">Kỹ năng</label
+                  ><input
+                    id="skills"
+                    name="skills"
+                    maxlength="500"
+                    placeholder="HTML, CSS, JavaScript"
+                    aria-describedby="skills-help"
+                  /><small id="skills-help" class="profile-hint"
+                    >Ngăn cách mỗi kỹ năng bằng dấu phẩy.</small
+                  >
+                </div>
+              </div>
+              <div class="profile-form-actions">
+                <button type="button" id="cancel-edit" class="profile-cancel">
+                  Hủy</button
+                ><button type="submit" class="btn">Lưu thay đổi</button>
+              </div>
+            </form>
+            <p
+              id="profile-status"
+              class="profile-status"
+              role="status"
+              aria-live="polite"
+            ></p>
+          </section>
+          <section class="profile-card" id="account-security" hidden aria-labelledby="password-title">
+            <h2 id="password-title">Đổi mật khẩu</h2>
+            <form id="password-form" class="profile-form">
+              <div class="profile-form-grid">
+                <label class="profile-field profile-field-wide">Mật khẩu hiện tại
+                  <input name="current_password" type="password" autocomplete="current-password" maxlength="128" required>
+                </label>
+                <label class="profile-field">Mật khẩu mới
+                  <input name="new_password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                </label>
+                <label class="profile-field">Nhập lại mật khẩu mới
+                  <input name="confirmation" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                </label>
+              </div>
+              <p class="profile-status" id="password-status" role="status"></p>
+              <button class="btn" type="submit">Đổi mật khẩu</button>
+            </form>
+          </section>
+          <section class="profile-card" id="work-history" aria-labelledby="work-history-title">
+            <div class="profile-card-header"><h2 id="work-history-title">Kinh nghiệm làm việc</h2></div>
+            <ul class="record-list"></ul>
+            <p class="profile-status" role="status"></p>
+          </section>
+          <section class="profile-card" id="education-history" aria-labelledby="education-history-title">
+            <div class="profile-card-header"><h2 id="education-history-title">Học vấn</h2></div>
+            <ul class="record-list"></ul>
+            <p class="profile-status" role="status"></p>
+          </section>
+          <section
+            class="profile-card profile-next"
+            aria-labelledby="next-title"
+          >
+            <div>
+              <span class="profile-section-number">02 / HOÀN THIỆN HỒ SƠ</span>
+              <h2 id="next-title">CV &amp; Ứng tuyển</h2>
+              <p>
+                Bước tiếp theo là bổ sung CV để tăng khả năng tiếp cận nhà tuyển
+                dụng.
+              </p>
+            </div>
+            <a class="btn btn--outline" href="cv.html">Quản lý CV ↗</a>
+          </section>
+        </div>
       </div>
-    </div>
-  </main>
-  <div id="site-footer"></div>
-  <script type="module" src="../js/profile.js"></script>
-  <script type="module" src="../js/transitions.js"></script>
-</body>
+    </main>
+    <div id="site-footer"></div>
+    <script type="module" src="../js/profile.js"></script>
+    <script type="module" src="../js/transitions.js"></script>
+  </body>
 </html>

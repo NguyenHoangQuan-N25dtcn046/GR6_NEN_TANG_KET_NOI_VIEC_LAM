@@ -1,4 +1,3 @@
-from datetime import date
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -19,7 +18,7 @@ def apply_to_job(db: Session, job_id: int, payload: ApplicationCreate, user_id: 
         raise HTTPException(status_code=404, detail="Tin tuyển dụng không tồn tại")
     if job.approval_status != "approved" or job.job_status != "open":
         raise HTTPException(status_code=400, detail="Tin tuyển dụng chưa được công khai")
-    if job.deadline is not None and job.deadline < date.today():
+    if job.is_expired:
         raise HTTPException(status_code=400, detail="Tin tuyển dụng đã hết hạn")
 
     profile = get_candidate_profile(db, user_id)

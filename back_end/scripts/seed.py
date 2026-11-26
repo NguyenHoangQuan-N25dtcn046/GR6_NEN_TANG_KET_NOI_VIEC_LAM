@@ -21,6 +21,7 @@ from app.models.entities import (
     Job,
     JobCategory,
     RevokedToken,
+    SavedJob,
     User,
 )
 
@@ -31,7 +32,7 @@ def seed() -> None:
 
     # 1. Xóa dữ liệu cũ (thứ tự: con trước, cha sau)
     for model in [
-        Application, CandidateEducation, CandidateExperience, Job,
+        Application, SavedJob, CandidateEducation, CandidateExperience, Job,
         CandidateProfile, EmployerProfile, JobCategory, RevokedToken, User,
     ]:
         db.query(model).delete()
@@ -74,7 +75,7 @@ def seed() -> None:
     db.flush()
 
     # 6. Tin tuyển dụng (đủ trạng thái: công khai / chờ duyệt / đóng)
-    def make_job(emp, title, cat, location, approval_status, job_status):
+    def make_job(emp, title, cat, location, approval_status, job_status, work_mode, job_type, experience_years):
         status = "published" if (approval_status == "approved" and job_status == "open") else \
                  "closed" if job_status == "closed" else \
                  "rejected" if approval_status == "rejected" else "pending"
@@ -83,13 +84,14 @@ def seed() -> None:
             description=f"Mô tả công việc: {title}.", location=location,
             salary_min=10000000, salary_max=25000000,
             status=status, approval_status=approval_status, job_status=job_status,
+            work_mode=work_mode, job_type=job_type, experience_years=experience_years,
         )
 
     jobs = [
-        make_job(employers[0], "Kỹ sư Backend Python", "Công nghệ thông tin", "Hà Nội", "approved", "open"),
-        make_job(employers[0], "Nhân viên Marketing", "Marketing / Truyền thông", "Hà Nội", "pending", "open"),
-        make_job(employers[1], "Kế toán viên", "Kế toán / Tài chính", "Đà Nẵng", "approved", "open"),
-        make_job(employers[1], "Nhân viên kinh doanh", "Kinh doanh / Bán hàng", "Hà Nội", "approved", "closed"),
+        make_job(employers[0], "Kỹ sư Backend Python", "Công nghệ thông tin", "Hà Nội", "approved", "open", "remote", "full-time", 3),
+        make_job(employers[0], "Nhân viên Marketing", "Marketing / Truyền thông", "Hà Nội", "pending", "open", "hybrid", "full-time", 1),
+        make_job(employers[1], "Kế toán viên", "Kế toán / Tài chính", "Đà Nẵng", "approved", "open", "onsite", "full-time", 2),
+        make_job(employers[1], "Nhân viên kinh doanh", "Kinh doanh / Bán hàng", "Hà Nội", "approved", "closed", "onsite", "contract", 0),
     ]
     db.add_all(jobs)
     db.flush()
@@ -100,7 +102,7 @@ def seed() -> None:
     db.commit()
     db.close()
 
-    print("\n=== Seed xong. Tài khoản demo ===")
+    print("\n=== Seed xong. Tai khoan demo ===")
     print("Admin     : admin@example.com     / Admin@123")
     print("Employer  : employer1@example.com / Employer@123")
     print("Employer  : employer2@example.com / Employer@123")

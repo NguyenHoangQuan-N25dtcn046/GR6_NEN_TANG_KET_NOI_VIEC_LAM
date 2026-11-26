@@ -4,14 +4,18 @@
 **Vai trò:** TV3 — Frontend Candidate.  
 **Thiết kế:** Tham chiếu Figma Job Portal do nhóm cung cấp.
 
-## Chạy dự án
-Mở **thư mục `job-portal`** trong VS Code và chạy `index.html` bằng Live Server.
-Không chạy trực tiếp bằng `file://` vì script ES Modules có thể bị chặn.
+## Chạy bản hiện tại
 
-## Trạng thái
-- UI-01: Layout dùng chung, routing nhiều trang, hiệu ứng chuyển trang, giao diện tiếng Việt.
-- SEARCH-04 (một phần demo): Checkbox ngành nghề / loại hình hoạt động, lọc trên dữ liệu mẫu tại `js/components/job-card.js`. Chưa kết nối API thật.
-- Các task AUTH, PROFILE, APPLY: Các trang đang là placeholder, chưa hoàn thành.
+Khởi động [backend](../README.md) rồi mở `http://localhost:8000/candidate-web/`,
+hoặc chọn **Candidate** từ ứng dụng React. Các nghiệp vụ dùng API thật gồm
+đăng ký, đăng nhập, đổi mật khẩu, hồ sơ, học vấn và kinh nghiệm, tải CV
+PDF/DOCX, tìm việc, lưu việc và theo dõi ứng tuyển.
+
+[Xem cấu hình và checklist](INTEGRATION.md).
+
+## Ghi chú phát triển trước khi tích hợp API
+
+Các mốc dưới đây mô tả các bản UI cũ. Hướng dẫn ở trên áp dụng cho bản hiện tại.
 
 ## Một project duy nhất cho mọi task
 **Không tạo các thư mục `project-task2`, `project-task3` độc lập.**

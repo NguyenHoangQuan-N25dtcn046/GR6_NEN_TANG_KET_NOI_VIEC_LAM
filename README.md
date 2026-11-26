@@ -12,9 +12,10 @@ python -m venv .venv
 # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env  # Windows: copy .env.example .env
+# Đặt JWT_SECRET_KEY thành một khóa ngẫu nhiên trong .env
 uvicorn app.main:app --reload
 ```
-API: http://localhost:8000/docs ; Health: http://localhost:8000/api/v1/health
+Swagger http://localhost:8000/docs · Ứng viên http://localhost:8000/candidate-web/
 
 ### Frontend
 ```bash
@@ -23,11 +24,11 @@ npm install
 cp .env.example .env  # Windows: copy .env.example .env
 npm run dev
 ```
-Web: http://localhost:5173
+Web http://localhost:5173 · Nhà tuyển dụng và quản trị mở từ menu. Nút Candidate mở giao diện phục vụ bởi FastAPI.
 
 ## Nâng cấp database đã dùng
 
-Phiên bản này thêm cột `jobs.work_mode` và hai bảng hồ sơ ứng viên.
+Migration bổ sung các cột việc làm còn thiếu và `users.auth_version`.
 Với database hiện có, sao lưu và dừng backend trước khi cập nhật. Chạy lệnh
 sau từ thư mục `back_end` với cùng `DATABASE_URL` cấu hình cho backend:
 
@@ -35,14 +36,27 @@ sau từ thư mục `back_end` với cùng `DATABASE_URL` cấu hình cho backen
 python -m scripts.migrate_job_fields
 ```
 
-Sau đó khởi động lại backend để tạo hai bảng mới. Có thể chạy migration
+Sau đó khởi động lại backend để tạo các bảng còn thiếu. Có thể chạy migration
 nhiều lần. Với database mới, backend tạo đầy đủ bảng khi khởi động.
 
 ## Database MySQL
 Mặc định backend dùng SQLite để có thể chạy ngay. Khi dùng MySQL, tạo database `job_platform`, cài MySQL server và sửa `DATABASE_URL` trong `back_end/.env`:
-`mysql+pymysql://root:password@localhost:3306/job_platform?charset=utf8mb4`
+`mysql+pymysql://job_app:<mat-khau>@localhost:3306/job_platform?charset=utf8mb4`
 
-**Lưu ý:** `Base.metadata.create_all()` trong starter chỉ dành cho local development. Trước khi triển khai thật cần Alembic migrations, JWT auth, RBAC, validation nghiệp vụ, upload CV an toàn, test và CI.
+Tạo tài khoản MySQL riêng cho ứng dụng. Khi nâng cấp, chạy migration trên
+database đã sao lưu. Cấu hình `UPLOAD_DIR` trên ổ lưu trữ bền vững và sao lưu
+cả thư mục CV cùng database.
+
+## Tạo tài khoản quản trị
+
+Từ `back_end`, chạy `python -m scripts.create_admin admin@example.com` và
+nhập mật khẩu khi được nhắc. Lệnh thêm tài khoản vào database được cấu hình.
+Dùng màn hình quản trị để thêm ngành nghề và duyệt tin. Nhà tuyển dụng tự
+đăng ký từ màn hình đăng nhập.
+
+Khi triển khai chung tên miền, build React với `VITE_API_BASE_URL=/api/v1`
+và chuyển tiếp cả `/api/v1/` và `/candidate-web/` đến FastAPI. Giữ
+`front_end_candidate/` cạnh `back_end/` trên máy chủ.
 
 ## Phân công
 - TV1 Scrum Master & Backend Lead: architecture, auth/RBAC, review, migrations, CI.
@@ -53,5 +67,9 @@ Mặc định backend dùng SQLite để có thể chạy ngay. Khi dùng MySQL,
 ## Cấu trúc
 `docs/ERD.md` sơ đồ Mermaid; `docs/SCHEMA.sql` DDL MySQL; `docs/API_CONTRACT.md` API dự kiến; `docs/TEAM_WORKFLOW.md` workflow.
 
-## Trạng thái
-Đây là **khung khởi tạo chạy được** với health check và danh sách việc làm công khai. Các màn hình và endpoint nghiệp vụ khác là placeholder/TODO, không phải sản phẩm hoàn chỉnh.
+## Nghiệp vụ MVP
+
+Ứng viên quản lý hồ sơ, học vấn, kinh nghiệm và CV, tìm việc, lưu việc và
+theo dõi đơn. Nhà tuyển dụng cập nhật công ty, đăng tin và xử lý hồ sơ ứng
+tuyển. Quản trị viên quản lý ngành nghề, duyệt tin và khóa hoặc mở khóa tài
+khoản. Swagger mô tả các endpoint và quyền truy cập.

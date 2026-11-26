@@ -1,11 +1,11 @@
-"""Explicit, repeatable migration for existing job tables. Back up the DB first.
+"""Explicit, repeatable migration for existing job and user tables. Back up the DB first.
 Run from back_end: python -m scripts.migrate_job_fields
 """
 from contextlib import contextmanager
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import inspect, Column, String, Text, text
+from sqlalchemy import inspect, Column, Integer, String, Text, text
 
 
 @contextmanager
@@ -31,14 +31,17 @@ def migration_connection(engine):
 def upgrade(engine):
     with migration_connection(engine) as connection:
         inspector = inspect(connection)
-        if "jobs" not in inspector.get_table_names():
+        tables = inspector.get_table_names()
+        operations = Operations(MigrationContext.configure(connection))
+        if "users" in tables and "auth_version" not in {c["name"] for c in inspector.get_columns("users")}:
+            operations.add_column("users", Column("auth_version", Integer(), nullable=False, server_default="0"))
+        if "jobs" not in tables:
             return
         columns = {c["name"]: c for c in inspector.get_columns("jobs")}
         if "True" in columns and "rejection_reason" in columns:
             raise RuntimeError("Both True and rejection_reason exist; reconcile data before migration")
         if "approval" in columns and "approval_status" in columns:
             raise RuntimeError("Both approval and approval_status exist; reconcile data before migration")
-        operations = Operations(MigrationContext.configure(connection))
         added_approval = "approval" not in columns and "approval_status" not in columns
         added_job_status = "job_status" not in columns
         with operations.batch_alter_table("jobs") as batch:
@@ -58,6 +61,10 @@ def upgrade(engine):
                 batch.add_column(Column("job_status", String(20), nullable=False, server_default="open"))
             if "work_mode" not in columns:
                 batch.add_column(Column("work_mode", String(20), nullable=True))
+            if "job_type" not in columns:
+                batch.add_column(Column("job_type", String(20), nullable=True))
+            if "experience_years" not in columns:
+                batch.add_column(Column("experience_years", Integer(), nullable=True))
         if added_approval:
             connection.execute(text("""UPDATE jobs SET approval = CASE
                 WHEN status IN ('published', 'closed') THEN 'approved'
@@ -70,4 +77,4 @@ def upgrade(engine):
 if __name__ == "__main__":
     from app.db.session import engine
     upgrade(engine)
-    print("Job field migration completed")
+    print("Database field migration completed")

@@ -8,6 +8,9 @@ const $=(id)=>document.getElementById(id);
 const fields=isRegister?['register-email','register-password','register-confirm','register-agree']:['login-email','login-password'];
 function setError(id,message){const input=$(id);const error=$(id+'-error');if(error)error.textContent=message;if(input)input.setAttribute('aria-invalid',message?'true':'false');}
 function showStatus(message,state='error'){status.textContent=message;status.dataset.state=state;}
+if (!isRegister && new URLSearchParams(window.location.search).has('passwordChanged')) {
+  showStatus('Đã đổi mật khẩu. Vui lòng đăng nhập lại.', 'success');
+}
 function validate(){
  let valid=true;
  const email=$(isRegister?'register-email':'login-email');

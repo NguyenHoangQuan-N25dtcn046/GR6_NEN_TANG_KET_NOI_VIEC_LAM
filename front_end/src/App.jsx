@@ -1,9 +1,17 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Link, Routes, Route } from 'react-router-dom'
 import JobsPage from './features/candidate/JobsPage.jsx'
 import Placeholder from './components/Placeholder.jsx'
 import Tv4 from './features/tv4/Workspace.jsx'
 const Tv4Preview = import.meta.env.DEV ? lazy(() => import('./features/tv4-preview/Preview.jsx')) : null
+const apiOrigin = new URL(import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1', window.location.origin).origin
+const candidateHome = new URL('/candidate-web/', apiOrigin)
+
+function CandidatePage({ path }) {
+  const destination = new URL(path, candidateHome).href
+  useEffect(() => { window.location.replace(destination) }, [destination])
+  return <p><a href={destination}>Open Candidate Workspace</a></p>
+}
 
 export default function App() {
   return <Routes>
@@ -15,10 +23,10 @@ export default function App() {
 }
 
 function PublicApp() {
-  return <><header><strong>JobLink</strong><nav><Link to="/">Jobs</Link><Link to="/candidate/profile">Candidate</Link><Link to="/employer/jobs">Employer</Link><Link to="/admin/jobs">Admin</Link></nav></header><main><Routes>
+  return <><header><strong>JobLink</strong><nav><Link to="/">Jobs</Link><a href={candidateHome.href}>Candidate</a><Link to="/employer/jobs">Employer</Link><Link to="/admin/jobs">Admin</Link></nav></header><main><Routes>
     <Route path="/" element={<JobsPage/>}/>
-    <Route path="/candidate/profile" element={<Placeholder title="Candidate Profile" owner="TV3"/>}/>
-    <Route path="/candidate/applications" element={<Placeholder title="My Applications" owner="TV3"/>}/>
+    <Route path="/candidate/profile" element={<CandidatePage path="pages/profile.html"/>}/>
+    <Route path="/candidate/applications" element={<CandidatePage path="pages/applications.html"/>}/>
     <Route path="*" element={<Placeholder title="Page Not Found" owner="Team"/>}/>
   </Routes></main></>
 }

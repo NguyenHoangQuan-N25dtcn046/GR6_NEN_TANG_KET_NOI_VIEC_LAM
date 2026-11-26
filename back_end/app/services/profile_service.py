@@ -1,10 +1,10 @@
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from app.models.entities import CandidateProfile
-from app.schemas.profile import CandidateProfileUpdate
+from app.models.entities import CandidateProfile, EmployerProfile
+from app.schemas.profile import CandidateProfileUpdate, EmployerProfileUpdate
 from app.services.cv_service import save_cv
-from app.services.ownership import get_candidate_profile
+from app.services.ownership import get_candidate_profile, get_employer_profile
 
 
 def get_profile(db: Session, user_id: int) -> CandidateProfile:
@@ -27,6 +27,15 @@ def upload_cv(db: Session, file: UploadFile, user_id: int) -> CandidateProfile:
     profile = get_candidate_profile(db, user_id)
     cv_url = save_cv(file, user_id)
     profile.cv_url = cv_url
+    db.commit()
+    db.refresh(profile)
+    return profile
+
+
+def update_company_profile(db: Session, payload: EmployerProfileUpdate, user_id: int) -> EmployerProfile:
+    profile = get_employer_profile(db, user_id)
+    for key, value in payload.model_dump(exclude_unset=True, mode="json").items():
+        setattr(profile, key, value)
     db.commit()
     db.refresh(profile)
     return profile

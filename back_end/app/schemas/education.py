@@ -4,6 +4,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class EducationBase(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     school: str = Field(min_length=1, max_length=200)
     major: str = Field(min_length=1, max_length=200)
     degree: str = Field(min_length=1, max_length=100)
@@ -20,6 +22,8 @@ class EducationCreate(EducationBase):
 
 
 class EducationUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
     school: str | None = Field(default=None, min_length=1, max_length=200)
     major: str | None = Field(default=None, min_length=1, max_length=200)
     degree: str | None = Field(default=None, min_length=1, max_length=100)

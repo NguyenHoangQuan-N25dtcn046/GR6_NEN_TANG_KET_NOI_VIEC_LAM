@@ -27,6 +27,45 @@ export async function uploadCV(file) {
   body.append('file', normalized);
   return api('/candidate/cv', { method: 'POST', body, auth: true });
 }
-export function normalizeJob(j){return {...j,company:j.company_name||'Chưa cập nhật',category:j.category_id==null?'Chưa phân loại':`Ngành #${j.category_id}`,type:'Chưa cập nhật',salaryMin:j.salary_min==null?null:Number(j.salary_min),salary:j.salary_min==null&&j.salary_max==null?'Thỏa thuận':[j.salary_min,j.salary_max].filter(x=>x!=null).map(x=>Number(x).toLocaleString('vi-VN')).join(' – '),time:j.deadline?`Hạn: ${j.deadline}`:'Việc làm'};}
-export async function jobs(filters={}){const all=[];let offset=0;while(true){const q=new URLSearchParams({limit:'100',offset:String(offset)});for(const [k,v] of Object.entries(filters))if(v!==''&&v!=null)q.set(k,String(v));const batch=await api('/jobs?'+q);all.push(...batch);if(batch.length<100)break;offset+=batch.length;}return all.map(normalizeJob);}
+const jobTypes = {'full-time':'Toàn thời gian', 'part-time':'Bán thời gian', contract:'Hợp đồng', internship:'Thực tập'};
+const workModes = {onsite:'Tại văn phòng', remote:'Từ xa', hybrid:'Kết hợp'};
+
+export function normalizeJob(job) {
+  const amounts = [job.salary_min, job.salary_max].filter(amount => amount != null);
+  return {
+    ...job,
+    company: job.company_name || 'Chưa cập nhật',
+    category: job.category_name || 'Chưa phân loại',
+    type: jobTypes[job.job_type] || 'Chưa cập nhật',
+    workMode: workModes[job.work_mode] || 'Chưa cập nhật',
+    experience: job.experience_years == null ? 'Chưa cập nhật' : job.experience_years + ' năm',
+    salary: amounts.length ? amounts.map(amount => Number(amount).toLocaleString('vi-VN')).join(' – ') + ' VND' : 'Thỏa thuận',
+    time: job.is_expired ? 'Đã hết hạn' : job.job_status === 'closed' ? 'Đã đóng' : job.deadline ? 'Hạn ' + job.deadline : 'Việc làm',
+  };
+}
+
+export async function jobs(filters = {}, { limit = 100, all = true } = {}) {
+  const matches = [];
+  const query = new URLSearchParams({ limit: String(limit) });
+  for (const [key, selected] of Object.entries(filters)) {
+    for (const value of Array.isArray(selected) ? selected : [selected]) {
+      if (value !== '' && value != null) query.append(key, String(value));
+    }
+  }
+  do {
+    query.set('offset', String(matches.length));
+    const batch = await api('/jobs?' + query);
+    matches.push(...batch);
+    if (!all || batch.length < limit) break;
+  } while (true);
+  return matches.map(normalizeJob);
+}
+
+export async function fillCategories(select, selected = '') {
+  const categories = await api('/jobs/categories');
+  select.append(...categories.map(({ id, name }) => new Option(name, id)));
+  select.value = selected;
+  if (select.selectedIndex < 0) select.selectedIndex = 0;
+}
+
 export async function jobById(id){if(!/^\d+$/.test(id||''))throw Object.assign(new Error('ID công việc không hợp lệ.'),{status:404});return normalizeJob(await api('/jobs/'+encodeURIComponent(id)));}

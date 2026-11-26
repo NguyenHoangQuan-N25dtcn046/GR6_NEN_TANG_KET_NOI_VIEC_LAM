@@ -12,10 +12,11 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, stored_hash: str) -> bool:
     return hasher.verify(password, stored_hash)
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(user_id: int, auth_version: int = 0) -> str:
     now = datetime.now(timezone.utc)
     payload = {
         'sub': str(user_id), 'token_type': 'access', 'jti': str(uuid4()),
         'iat': now, 'exp': now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        'ver': auth_version,
     }
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)

@@ -14,6 +14,14 @@ const preview = document.querySelector('#cv-preview-frame');
 const empty = document.querySelector('#cv-preview-empty');
 const openFile = document.querySelector('#cv-open-file');
 const upload = document.querySelector('#cv-upload');
+const jobId = new URLSearchParams(window.location.search).get('jobId');
+if (/^[0-9]+$/.test(jobId ?? '')) {
+  const returnLink = document.createElement('a');
+  returnLink.href = `apply.html?jobId=${encodeURIComponent(jobId)}`;
+  returnLink.textContent = 'Quay lại đơn ứng tuyển';
+  upload.parentElement.append(returnLink);
+}
+
 let objectUrl = null;
 let currentFile = null;
 

@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from app.models.entities import User, CandidateProfile, EmployerProfile, RevokedToken
-from app.schemas.auth import RegisterRequest, LoginRequest, UserResponse, TokenResponse
+from app.schemas.auth import RegisterRequest, LoginRequest, PasswordUpdate, UserResponse, TokenResponse
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.config import settings
 
@@ -35,6 +35,8 @@ def authenticated_context(credentials: HTTPAuthorizationCredentials | None = Dep
         raise error
     if not user.is_active:
         raise HTTPException(403, "Tài khoản đã bị vô hiệu hóa")
+    if payload.get('ver', 0) != user.auth_version:
+        raise error
     return user, payload
 
 def get_current_user(context: tuple[User, dict] = Depends(authenticated_context)) -> User:
@@ -71,7 +73,7 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(401, 'Email hoặc mật khẩu không đúng', headers={'WWW-Authenticate': 'Bearer'})
     if not user.is_active:
         raise HTTPException(403, 'Tài khoản đã bị vô hiệu hóa')
-    return TokenResponse(access_token=create_access_token(user.id))
+    return TokenResponse(access_token=create_access_token(user.id, user.auth_version))
 
 @router.get('/me', response_model=UserResponse)
 def me(user: User = Depends(get_current_user)):
@@ -89,4 +91,25 @@ def logout(context: tuple[User, dict] = Depends(authenticated_context), db: Sess
         if db.scalar(select(RevokedToken.id).where(RevokedToken.jti == payload['jti'])) is None:
             raise
         raise HTTPException(401, 'Token đã bị thu hồi', headers={'WWW-Authenticate': 'Bearer'})
+    return Response(status_code=204)
+
+
+@router.patch('/password', status_code=204, response_class=Response)
+def change_password(
+    payload: PasswordUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(payload.current_password, user.password_hash):
+        raise HTTPException(400, "Mật khẩu hiện tại không đúng")
+    if payload.current_password == payload.new_password:
+        raise HTTPException(422, "Mật khẩu mới phải khác mật khẩu hiện tại")
+    result = db.execute(
+        update(User).where(User.id == user.id, User.auth_version == user.auth_version, User.is_active.is_(True))
+        .values(password_hash=hash_password(payload.new_password), auth_version=User.auth_version + 1)
+    )
+    if result.rowcount == 0:
+        db.rollback()
+        raise HTTPException(409, "Tài khoản đã thay đổi. Vui lòng đăng nhập lại.")
+    db.commit()
     return Response(status_code=204)

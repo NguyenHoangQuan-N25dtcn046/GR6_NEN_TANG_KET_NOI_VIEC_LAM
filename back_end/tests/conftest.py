@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.security import create_access_token, hash_password
-from app.db.session import Base, get_db
+from app.db.session import Base, configure_sqlite_connection, get_db
 from app.main import app
 from app.models import entities  # noqa: F401
 from app.models.entities import EmployerProfile, Job, User
@@ -29,9 +29,7 @@ HASH = hash_password(PASSWORD)
 def api():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
-    @event.listens_for(engine, "connect")
-    def foreign_keys(connection, record):
-        connection.execute("PRAGMA foreign_keys=ON")
+    event.listen(engine, "connect", configure_sqlite_connection)
 
     Base.metadata.create_all(engine)
     sessions = sessionmaker(bind=engine)
@@ -74,6 +72,7 @@ def api():
 @pytest.fixture()
 def engine(tmp_path):
     eng = create_engine(f"sqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False})
+    event.listen(eng, "connect", configure_sqlite_connection)
     Base.metadata.create_all(bind=eng)
     yield eng
     eng.dispose()
