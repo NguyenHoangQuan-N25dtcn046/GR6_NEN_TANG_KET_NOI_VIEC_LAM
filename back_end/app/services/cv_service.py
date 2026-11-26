@@ -6,9 +6,15 @@ from fastapi import HTTPException, UploadFile
 
 from app.core.config import BASE_DIR, settings
 
-ALLOWED_MIME = "application/pdf"
-ALLOWED_EXT = ".pdf"
-PDF_MAGIC = b"%PDF"
+# Định dạng CV được chấp nhận: PDF và DOCX (kiểm tra đuôi + MIME + magic bytes)
+_FORMATS = {
+    "pdf": {"ext": ".pdf", "mime": "application/pdf", "magic": b"%PDF"},
+    "docx": {
+        "ext": ".docx",
+        "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "magic": b"PK\x03\x04",
+    },
+}
 
 
 def _upload_root() -> Path:
@@ -16,6 +22,15 @@ def _upload_root() -> Path:
     if not root.is_absolute():
         root = BASE_DIR / root
     return root
+
+
+def _detect_format(filename: str, content_type: str, content: bytes) -> str:
+    """Xác định định dạng (pdf/docx) dựa trên đuôi + MIME + magic bytes."""
+    ext = ("." + filename.rsplit(".", 1)[-1]) if "." in filename else ""
+    for fmt, spec in _FORMATS.items():
+        if ext == spec["ext"] and content_type == spec["mime"] and content.startswith(spec["magic"]):
+            return fmt
+    raise HTTPException(status_code=415, detail="Chỉ chấp nhận file PDF hoặc DOCX hợp lệ")
 
 
 def save_cv(file: UploadFile, user_id: int) -> str:
@@ -30,15 +45,11 @@ def save_cv(file: UploadFile, user_id: int) -> str:
         raise HTTPException(status_code=413, detail=f"CV vượt quá {settings.MAX_CV_SIZE_MB}MB")
 
     filename = (file.filename or "").lower()
-    if not filename.endswith(ALLOWED_EXT):
-        raise HTTPException(status_code=415, detail="Chỉ chấp nhận file PDF")
-
-    if file.content_type != ALLOWED_MIME or not content.startswith(PDF_MAGIC):
-        raise HTTPException(status_code=415, detail="File không phải PDF hợp lệ")
+    fmt = _detect_format(filename, file.content_type, content)
 
     upload_dir = _upload_root() / "cv"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    stored_name = f"{user_id}_{uuid.uuid4().hex}.pdf"
+    stored_name = f"{user_id}_{uuid.uuid4().hex}.{fmt}"
     (upload_dir / stored_name).write_bytes(content)
 
     return f"/uploads/cv/{stored_name}"
@@ -47,7 +58,7 @@ def save_cv(file: UploadFile, user_id: int) -> str:
 def resolve_cv_path(cv_url: str | None, user_id: int) -> Path | None:
     """Chuyển `cv_url` thành đường dẫn file thực trên đĩa.
 
-    Chỉ trả về tệp đã lưu cho đúng người dùng.
+    Chặn path traversal và file không tồn tại; trả None nếu không hợp lệ.
     """
     if not cv_url:
         return None
@@ -55,7 +66,23 @@ def resolve_cv_path(cv_url: str | None, user_id: int) -> Path | None:
     if not cv_url.startswith(prefix):
         return None
     stored_name = cv_url[len(prefix):]
-    if not re.fullmatch(rf"{user_id}_[0-9a-f]{{32}}\.pdf", stored_name):
+    if not re.fullmatch(rf"{user_id}_[0-9a-f]{{32}}\.(pdf|docx)", stored_name):
         return None
     path = _upload_root() / "cv" / stored_name
     return path if path.is_file() else None
+
+
+def cv_filename(cv_url: str) -> str:
+    """Tên file tải về (cv.pdf hoặc cv.docx)."""
+    ext = cv_url.rsplit(".", 1)[-1] if "." in cv_url else "pdf"
+    return f"cv.{ext}"
+
+
+CV_DOWNLOAD_RESPONSES = {
+    200: {
+        "content": {
+            "application/pdf": {"schema": {"type": "string", "format": "binary"}},
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {"schema": {"type": "string", "format": "binary"}},
+        }
+    }
+}
