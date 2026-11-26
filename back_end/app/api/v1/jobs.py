@@ -1,3 +1,6 @@
+from decimal import Decimal
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
@@ -17,11 +20,14 @@ def list_jobs(
     q: str | None = None,
     location: str | None = None,
     category_id: int | None = None,
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None,
+    salary_min: Decimal | None = Query(default=None, ge=0),
+    salary_max: Decimal | None = Query(default=None, ge=0),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    return job_service.list_public_jobs(db, q, location, category_id, limit, offset)
+    return job_service.list_public_jobs(db, q, location, category_id, work_mode, salary_min, salary_max, limit, offset)
 
 
 @router.get("/{job_id}", response_model=JobResponse)

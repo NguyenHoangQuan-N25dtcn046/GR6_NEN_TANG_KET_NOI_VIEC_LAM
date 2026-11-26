@@ -56,6 +56,8 @@ def upgrade(engine):
                 batch.add_column(Column("approval", String(20), nullable=False, server_default="pending"))
             if added_job_status:
                 batch.add_column(Column("job_status", String(20), nullable=False, server_default="open"))
+            if "work_mode" not in columns:
+                batch.add_column(Column("work_mode", String(20), nullable=True))
         if added_approval:
             connection.execute(text("""UPDATE jobs SET approval = CASE
                 WHEN status IN ('published', 'closed') THEN 'approved'

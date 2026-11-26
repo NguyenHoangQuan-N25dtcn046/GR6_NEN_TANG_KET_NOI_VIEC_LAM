@@ -8,6 +8,7 @@ from app.models.entities import User
 from app.schemas.application import ApplicationStatusUpdate, EmployerApplicationOut
 from app.schemas.job import JobCreate, JobResponse
 from app.services import application_service, job_service
+from app.services.cv_service import CV_DOWNLOAD_RESPONSES
 from app.services.ownership import get_employer_profile, get_owned_job
 
 router = APIRouter(prefix="/employer", tags=["Employer"])
@@ -86,7 +87,7 @@ def update_application_status(
 @router.get(
     "/jobs/{job_id}/applications/{application_id}/cv",
     response_class=FileResponse, summary="Tải CV ứng viên",
-    responses={200: {"content": {"application/pdf": {"schema": {"type": "string", "format": "binary"}}}}},
+    responses=CV_DOWNLOAD_RESPONSES,
 )
 def download_application_cv(
     job_id: int,
@@ -95,4 +96,4 @@ def download_application_cv(
     db: Session = Depends(get_db),
 ):
     path = application_service.get_application_cv_path(db, job_id, application_id, current_user.id)
-    return FileResponse(path, media_type="application/pdf", filename="cv.pdf")
+    return FileResponse(path, filename=f"cv{path.suffix}")
