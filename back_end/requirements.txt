@@ -8,4 +8,6 @@ PyJWT
 pwdlib[argon2]
 email-validator
 pathlib
-alembic>=1.13,<2
+alembic
+pytest
+httpx
