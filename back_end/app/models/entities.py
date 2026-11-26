@@ -51,6 +51,12 @@ class Job(Base):
     approval_status: Mapped[str] = mapped_column("approval", String(20), nullable=False, default="pending")
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    employer = relationship("EmployerProfile", lazy="joined")
+
+    @property
+    def company_name(self) -> str | None:
+        return self.employer.company_name if self.employer else None
+
 class Application(Base):
     __tablename__ = "applications"
     __table_args__ = (UniqueConstraint("job_id", "candidate_id", name="uq_application_job_candidate"),)
@@ -62,10 +68,25 @@ class Application(Base):
     status: Mapped[str] = mapped_column(String(20), default="submitted")
     applied_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+    job = relationship("Job", lazy="joined")
+    candidate = relationship("CandidateProfile", lazy="joined")
+
+    @property
+    def job_title(self) -> str | None:
+        return self.job.title if self.job else None
+
+    @property
+    def candidate_name(self) -> str | None:
+        return self.candidate.full_name if self.candidate else None
+
+    @property
+    def company_name(self) -> str | None:
+        return self.job.employer.company_name if self.job and self.job.employer else None
+
 class RevokedToken(Base):
     __tablename__ = "revoked_tokens"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     jti: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"),nullable=False)
-    revoke_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),default=lambda: datetime.now(timezone.utc),nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    revoke_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

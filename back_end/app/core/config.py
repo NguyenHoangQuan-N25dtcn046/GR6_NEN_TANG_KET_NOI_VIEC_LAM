@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    UPLOAD_DIR: str = "uploads"
+    MAX_CV_SIZE_MB: int = 5
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env",
                                       env_file_encoding="utf-8",
                                        extra="ignore")

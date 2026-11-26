@@ -1,13 +1,35 @@
 """Explicit, repeatable migration for existing job tables. Back up the DB first.
 Run from back_end: python -m scripts.migrate_job_fields
 """
+from contextlib import contextmanager
+
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import inspect, Column, String, Text, text
 
 
+@contextmanager
+def migration_connection(engine):
+    with engine.connect() as connection:
+        enforce_foreign_keys = False
+        if engine.dialect.name == "sqlite":
+            enforce_foreign_keys = bool(connection.exec_driver_sql("PRAGMA foreign_keys").scalar())
+            if enforce_foreign_keys:
+                # Alembic can rebuild jobs while applications still references it.
+                connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            connection.commit()
+
+        try:
+            with connection.begin():
+                yield connection
+        finally:
+            if enforce_foreign_keys:
+                connection.exec_driver_sql("PRAGMA foreign_keys=ON")
+                connection.commit()
+
+
 def upgrade(engine):
-    with engine.begin() as connection:
+    with migration_connection(engine) as connection:
         inspector = inspect(connection)
         if "jobs" not in inspector.get_table_names():
             return

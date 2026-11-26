@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
+sqlalchemy>=2.0,<2.1
 sqlalchemy_utils
 pydantic-settings
 pymysql
@@ -11,3 +11,4 @@ pathlib
 alembic
 pytest
 httpx
+python-multipart
