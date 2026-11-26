@@ -13,6 +13,7 @@ class JobPublic(BaseModel):
     salary_min: Decimal | None
     salary_max: Decimal | None
     deadline: date | None
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
     category_id: int | None
     employer_id: int
     company_name: str | None = None
@@ -28,6 +29,7 @@ class JobCreate(BaseModel):
     salary_max: Decimal | None = Field(default=None, ge=0)
     category_id: int | None = None
     deadline: date | None = None
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
 
     @model_validator(mode="after")
     def _check_salary_range(self):
@@ -39,6 +41,7 @@ class JobCreate(BaseModel):
 class JobUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
     description: str | None = Field(default=None, min_length=10)
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
     model_config = ConfigDict(extra="forbid")
 
 
