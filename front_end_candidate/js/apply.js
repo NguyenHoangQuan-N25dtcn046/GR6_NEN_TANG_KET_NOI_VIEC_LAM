@@ -1,5 +1,5 @@
 import { renderLayout } from './components/layout.js';
-import { demoJobs } from './components/job-card.js';
+import {api,jobById,uploadCV,me} from './api.js';
 
 renderLayout();
 
@@ -10,7 +10,7 @@ const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingm
 const form = document.querySelector('#apply-form');
 const missing = document.querySelector('#apply-missing');
 const jobId = new URLSearchParams(window.location.search).get('jobId');
-const job = demoJobs.find(item => String(item.id) === jobId);
+let job=null;let jobError='';try{job=await jobById(jobId);}catch(e){jobError=e.message;}
 const summary = document.querySelector('#apply-job-details');
 const cvInput = document.querySelector('#apply-cv');
 const cvMeta = document.querySelector('#apply-cv-meta');
@@ -23,7 +23,7 @@ let fileUrl = null;
 if (!job) {
   form.hidden = true;
   missing.hidden = false;
-  summary.textContent = 'Chưa có công việc hợp lệ được chọn.';
+  summary.textContent = jobError||'Chưa có công việc hợp lệ được chọn.';
 } else {
   document.title = `Ứng tuyển: ${job.title} | Job Portal`;
   const title = document.createElement('h3'); title.textContent = job.title;
@@ -44,8 +44,8 @@ function setError(field, text) {
 function validateCV(file) {
   if (!file) return 'Vui lòng chọn file CV để ứng tuyển.';
   const extension = file.name.split('.').pop()?.toLowerCase();
-  const mime = extension === 'pdf' ? PDF_MIME : extension === 'docx' ? DOCX_MIME : null;
-  if (!mime || (file.type && file.type !== mime)) return 'Chỉ hỗ trợ CV định dạng PDF hoặc DOCX.';
+  const mime = extension === 'pdf' ? PDF_MIME : null;
+  if (!mime || (file.type && file.type !== mime)) return 'Chỉ hỗ trợ CV định dạng PDF.';
   if (!file.size) return 'Tệp CV không được để trống.';
   if (file.size > MAX_CV_BYTES) return 'Dung lượng CV phải nhỏ hơn hoặc bằng 5 MB.';
   return '';
@@ -68,7 +68,7 @@ function validateForm() {
     return false;
   }
   message.classList.remove('is-error');
-  message.textContent = 'Hồ sơ hợp lệ tại trình duyệt. Chưa gửi ứng tuyển: backend chưa cung cấp API và cơ chế xác thực.';
+  message.textContent = 'Hồ sơ hợp lệ. Bạn có thể gửi ứng tuyển.';
   return true;
 }
 
@@ -93,9 +93,7 @@ cvInput.addEventListener('change', () => {
 });
 letter.addEventListener('input', () => { charCount.textContent = String(letter.value.length); });
 document.querySelector('#apply-validate').addEventListener('click', validateForm);
-form.addEventListener('submit', event => {
-  event.preventDefault();
-  // Tuyệt đối không báo thành công hoặc gửi dữ liệu khi chưa có API Contract.
-  validateForm();
-});
+const send=form.querySelector('[type="submit"]');
+let currentProfile=null;try{const u=await me();currentProfile=await api('/candidate/profile',{auth:true});document.querySelector('#apply-name').value=currentProfile.full_name;document.querySelector('#apply-email').value=u.email;document.querySelector('#apply-phone').value=currentProfile.phone||'';for(const id of ['apply-name','apply-email','apply-phone'])document.getElementById(id).readOnly=true;send.disabled=!job||job.job_status!=='open';}catch(e){message.textContent=e.message;send.disabled=true;}
+form.addEventListener('submit',async event=>{event.preventDefault();if(!job||job.job_status!=='open'||!currentProfile||!validateForm())return;send.disabled=true;let uploaded=false;try{await uploadCV(cvInput.files[0]);uploaded=true;const result=await api(`/jobs/${job.id}/applications`,{method:'POST',auth:true,body:{cover_letter:letter.value.trim()||null}});message.classList.remove('is-error');message.textContent=`Ứng tuyển thành công. Mã đơn: ${result.id}. Xem trong Lịch sử ứng tuyển.`;return;}catch(e){message.classList.add('is-error');message.textContent=(uploaded?'CV đã lưu nhưng chưa xác nhận ứng tuyển. ':'')+e.message;send.disabled=false;}});
 window.addEventListener('pagehide', revokePreview);

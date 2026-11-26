@@ -1,17 +1,10 @@
+import {api,me} from './api.js';
 import { renderLayout } from './components/layout.js';
 renderLayout();
 
 // PROF-02: Dữ liệu mẫu phục vụ UI. KHÔNG phải thông tin tài khoản đã đăng nhập.
 // Không lưu thông tin cá nhân vào localStorage khi chưa có quyết định về bảo mật.
-let profile = {
-  fullName: 'Nguyễn An',
-  email: 'ungvien@example.com',
-  phone: '0912 345 678',
-  skills: ['HTML', 'CSS', 'JavaScript'],
-  experience: 'Đã tham gia xây dựng giao diện website bằng HTML, CSS và JavaScript.',
-  education: 'Sinh viên ngành Công nghệ thông tin'
-};
-
+let profile={fullName:'',email:'',phone:'',skills:[],experience:'Backend chưa hỗ trợ',education:'Backend chưa hỗ trợ'};
 const byId = id => document.getElementById(id);
 const form = byId('profile-form');
 const view = byId('profile-view');
@@ -35,10 +28,10 @@ function render() {
   if(profile.skills.length){
     for(const skill of profile.skills){const el=document.createElement('span');el.className='profile-chip';el.textContent=skill;chips.append(el);}
   }else{chips.textContent='Chưa cập nhật';}
-  const values=[profile.fullName,profile.phone,profile.skills.length,profile.experience,profile.education];
+  const values=[profile.fullName,profile.phone,profile.skills.length];
   const progress=Math.round(values.filter(v=>typeof v==='number'?v>0:Boolean(String(v).trim())).length / values.length * 100);
   byId('completion-progress').style.width=`${progress}%`;
-  byId('completion-text').textContent=`Hồ sơ hoàn thiện ${progress}% (dữ liệu mẫu)`;
+  byId('completion-text').textContent=`Hồ sơ hoàn thiện ${progress}%`;
   document.querySelector('.completion-bar').setAttribute('aria-valuenow',String(progress));
 }
 function fillForm() {
@@ -61,7 +54,7 @@ function toggleEdit(isEditing) {
 }
 edit.addEventListener('click',()=>{showStatus();toggleEdit(true);});
 byId('cancel-edit').addEventListener('click',()=>{toggleEdit(false);showStatus('Đã hủy chỉnh sửa.');});
-form.addEventListener('submit',event=>{
+form.addEventListener('submit',async event=>{
   event.preventDefault();showStatus();
   const name=byId('full-name').value.trim().replace(/\s+/g,' ');
   const phone=byId('phone').value.trim();
@@ -72,8 +65,9 @@ form.addEventListener('submit',event=>{
   else{byId('phone-error').textContent='';byId('phone').removeAttribute('aria-invalid');}
   if(!valid){form.querySelector('[aria-invalid=true]')?.focus();return;}
   const skills=[...new Set(byId('skills').value.split(',').map(s=>s.trim()).filter(Boolean))].slice(0,20);
-  profile={...profile,fullName:name,phone,skills,experience:byId('experience').value.trim(),education:byId('education').value.trim()};
-  render();toggleEdit(false);
-  showStatus('Đã cập nhật giao diện demo. Thông tin chỉ tồn tại đến khi tải lại trang; chưa gửi lên backend.','success');
+  const button=form.querySelector('[type="submit"]');button.disabled=true;
+  try{const data=await api('/candidate/profile',{method:'PATCH',auth:true,body:{full_name:name,phone,skills:skills.join(', ')}});assign(data);render();toggleEdit(false);showStatus('Đã lưu hồ sơ trên hệ thống.','success');}catch(e){showStatus(e.message,'error');}finally{button.disabled=false;}
 });
-render();
+function assign(data){profile={...profile,fullName:data.full_name,phone:data.phone||'',skills:(data.skills||'').split(',').map(x=>x.trim()).filter(Boolean)};}
+edit.disabled=true;byId('experience').disabled=true;byId('education').disabled=true;
+try{const u=await me();profile.email=u.email;assign(await api('/candidate/profile',{auth:true}));render();edit.disabled=false;}catch(e){showStatus(e.message,'error');}

@@ -1,3 +1,4 @@
+import {api,uploadCV,me} from './api.js';
 import { renderLayout } from './components/layout.js';
 renderLayout();
 
@@ -36,8 +37,8 @@ function clearFile() {
 function checkFile(file) {
   if (!file) return 'Bạn chưa chọn tệp CV.';
   const ext = file.name.split('.').pop()?.toLowerCase();
-  const expectedMime = ext === 'pdf' ? MIME_PDF : ext === 'docx' ? MIME_DOCX : null;
-  if (!expectedMime || (file.type && file.type !== expectedMime)) return 'Chỉ chấp nhận file PDF hoặc DOCX.';
+  const expectedMime = ext === 'pdf' ? MIME_PDF : null;
+  if (!expectedMime || (file.type && file.type !== expectedMime)) return 'Chỉ chấp nhận file PDF.';
   if (file.size === 0) return 'Tệp CV đang trống.';
   if (file.size > MAX_BYTES) return 'Dung lượng CV không được vượt quá 5 MB.';
   return '';
@@ -60,8 +61,7 @@ function handleFile(file) {
   } else {
     empty.querySelector('p').textContent = 'Trình duyệt không hỗ trợ xem trước DOCX trực tiếp. Chọn “Mở file” để tải hoặc mở bằng ứng dụng phù hợp.';
   }
-  // Không bật nút upload khi backend chưa có hợp đồng API.
-  upload.disabled = true;
+  upload.disabled = busy;
 }
 input.addEventListener('change', () => handleFile(input.files?.[0]));
 document.querySelector('#cv-remove').addEventListener('click', clearFile);
@@ -69,3 +69,9 @@ for (const event of ['dragenter','dragover']) dropzone.addEventListener(event, e
 for (const event of ['dragleave','drop']) dropzone.addEventListener(event, e => { e.preventDefault(); dropzone.classList.remove('is-over'); });
 dropzone.addEventListener('drop', e => { if(e.dataTransfer?.files?.length) handleFile(e.dataTransfer.files[0]); });
 window.addEventListener('pagehide', resetPreview);
+
+const status=document.querySelector('#cv-upload-status');
+const saved=document.createElement('button');saved.className='btn btn--outline';saved.type='button';saved.textContent='Xem CV đã lưu';upload.after(saved);
+let busy=false;upload.addEventListener('click',async()=>{if(!currentFile||busy)return;busy=true;upload.disabled=true;try{await uploadCV(currentFile);status.textContent='Đã tải CV lên hệ thống.';}catch(e){status.textContent=e.message;}finally{busy=false;upload.disabled=!currentFile;}});
+saved.addEventListener('click',async()=>{try{const file=await api('/candidate/cv',{auth:true,blob:true});resetPreview();objectUrl=URL.createObjectURL(file);preview.src=objectUrl;preview.hidden=false;empty.hidden=true;openFile.href=objectUrl;openFile.hidden=false;status.textContent='Đang xem CV đã lưu.';}catch(e){status.textContent=e.message;}});
+try{await me();const data=await api('/candidate/profile',{auth:true});status.textContent=data.cv_url?'Đã có CV trên hệ thống.':'Chưa có CV trên hệ thống.';}catch(e){status.textContent=e.message;}

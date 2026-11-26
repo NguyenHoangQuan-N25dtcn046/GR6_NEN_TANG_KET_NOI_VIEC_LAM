@@ -1,5 +1,6 @@
 import {renderLayout} from './components/layout.js';
-import {demoJobs, demoJobDetails, jobCard} from './components/job-card.js';
+import {jobCard} from './components/job-card.js';
+import {jobs,jobById} from './api.js';
 
 renderLayout();
 const root = '..';
@@ -16,7 +17,12 @@ if (list) {
   keyword.value = params.get('keyword') || '';
   locationInput.value = params.get('location') || '';
   const PAGE_SIZE = 3;
-  const salaryInput = form.querySelector('#salary-range');
+  const locText=document.createElement('input');locText.setAttribute('aria-label','Địa điểm');locText.id='location';locText.type='search';locText.placeholder='Nhập địa điểm';locationInput.replaceWith(locText);locText.value=params.get('location')||'';
+  const category=document.createElement('input');category.type='number';category.min='1';category.placeholder='ID ngành (nếu biết)';category.id='category-id';category.setAttribute('aria-label','ID ngành nghề');category.value=params.get('category_id')||'';form.querySelector('.filter-group').replaceChildren(Object.assign(document.createElement('h3'),{textContent:'Ngành nghề (ID)'}),category);
+  for(const name of ['jobType','experience','workMode'])for(const input of form.querySelectorAll(`[name="${name}"]`)){input.disabled=true;input.title='Backend chưa hỗ trợ trường này';}
+  const notice=document.createElement('p');notice.textContent='API chưa có tên ngành, loại hình, kinh nghiệm, hình thức làm việc. Mức lương chưa xác định đơn vị.';form.prepend(notice);
+  let demoJobs=[];let loadError='';let requestSeq=0;let loading=false;
+  const oldSalary=form.querySelector('#salary-range');const salaryInput=document.createElement('input');salaryInput.id='salary-range';salaryInput.type='number';salaryInput.min='0';salaryInput.step='any';salaryInput.placeholder='Không giới hạn';oldSalary.replaceWith(salaryInput);
   const filterStatus = form.querySelector('#filter-status');
   const normalizeText = text => String(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLocaleLowerCase('vi').trim();
   let currentPage = 1;
@@ -31,8 +37,8 @@ if (list) {
   }
   function readFilters() {
     return {
-      keyword: normalizeText(keyword.value),
-      location: normalizeText(locationInput.value),
+      keyword: keyword.value.trim(),
+      location: locText.value.trim(), categoryId:category.value,
       categories: selectedValues('category'),
       types: selectedValues('jobType'),
       experiences: selectedValues('experience'),
@@ -40,22 +46,8 @@ if (list) {
       minSalary: salaryInput.value ? Number(salaryInput.value) : 0
     };
   }
-  function filterJobs(filters) {
-    return demoJobs.filter(job => {
-      const matchKeyword = !filters.keyword || normalizeText(`${job.title} ${job.company} ${job.category}`).includes(filters.keyword);
-      const matchLocation = !filters.location || normalizeText(job.location).includes(filters.location);
-      const matchCategory = !filters.categories.length || filters.categories.includes(job.category);
-      const matchType = !filters.types.length || filters.types.includes(job.type);
-      const matchExperience = !filters.experiences.length || filters.experiences.some(group => {
-        const years = job.experienceYears;
-        return group === '0-1' ? years <= 1 : group === '2-3' ? years >= 2 && years <= 3 : years >= 4;
-      });
-      const matchMode = !filters.workModes.length || filters.workModes.includes(job.workMode);
-      // Việc làm phải có mức lương tối thiểu đạt ngưỡng được chọn.
-      const matchSalary = !filters.minSalary || job.salaryMin >= filters.minSalary;
-      return matchKeyword && matchLocation && matchCategory && matchType && matchExperience && matchMode && matchSalary;
-    });
-  }
+  function filterJobs(filters){return demoJobs.filter(job=>!filters.minSalary||(job.salaryMin!==null&&job.salaryMin>=filters.minSalary));}
+  async function load(){const seq=++requestSeq;loading=true;total.textContent='Đang tải việc làm...';list.replaceChildren();pagination.replaceChildren();loadError='';try{const f=appliedFilters;const result=await jobs({q:f.keyword,location:f.location,category_id:f.categoryId});if(seq!==requestSeq)return;demoJobs=result;loading=false;renderJobs();}catch(e){if(seq!==requestSeq)return;demoJobs=[];loading=false;loadError=e.message;renderJobs();}}
   function renderPagination(pageCount) {
     pagination.replaceChildren();
     if (pageCount <= 1) return;
@@ -78,6 +70,8 @@ if (list) {
     addButton('Tiếp ›', currentPage + 1, currentPage === pageCount);
   }
   function renderJobs() {
+    if(loading)return;
+    if(loadError){total.textContent=loadError;list.replaceChildren();pagination.replaceChildren();return;}
     const filters = appliedFilters || readFilters();
     let matches = filterJobs(filters);
     if (sort.value === 'oldest') matches = [...matches].reverse();
@@ -102,36 +96,36 @@ if (list) {
     appliedFilters = readFilters();
     currentPage = 1;
     filterStatus.textContent = 'Đã áp dụng bộ lọc.';
-    renderJobs();
+    load();
   });
   sort.addEventListener('change', () => { currentPage = 1; renderJobs(); });
   document.querySelector('#clear-filters').addEventListener('click', () => {
     form.reset();
     keyword.value = '';
-    locationInput.value = '';
+    locText.value = ''; category.value='';
     appliedFilters = readFilters();
     currentPage = 1;
     window.history.replaceState(null, '', window.location.pathname);
     filterStatus.textContent = 'Đã xóa bộ lọc.';
-    renderJobs();
+    load();
   });
   // Có thể đến trang Jobs từ thanh tìm kiếm ở Homepage qua query string.
   appliedFilters = readFilters();
-  renderJobs();
+  load();
 }
 
 const detail = document.querySelector('#detail-job');
 if (detail) {
   const id = new URLSearchParams(window.location.search).get('id');
-  const job = demoJobs.find(item => String(item.id) === id);
+  let job=null;let jobError='';try{job=await jobById(id);}catch(e){jobError=e.message;}
   const container = document.querySelector('.job-detail-grid');
   const notFound = document.querySelector('#job-not-found');
   if (!job) {
     container.hidden = true;
-    notFound.hidden = false;
+    notFound.hidden = false;notFound.querySelector('p').textContent=jobError;
     document.title = 'Không tìm thấy công việc — Job Portal';
   } else {
-    const content = demoJobDetails[job.id];
+    const content={description:job.description,experience:'Chưa cập nhật',responsibilities:[],skills:[]};
     document.title = `${job.title} — Job Portal`;
     detail.querySelector('.detail-job-title').textContent = job.title;
     detail.querySelector('.detail-job-company').textContent = job.company;
@@ -156,7 +150,9 @@ if (detail) {
     container.querySelector('.overview-salary').textContent = job.salary;
     document.querySelector('#apply-job-link').href = `apply.html?jobId=${encodeURIComponent(job.id)}`;
     const related = document.querySelector('#related-jobs');
-    related.replaceChildren(...demoJobs.filter(j => j.id !== job.id && j.category === job.category).concat(demoJobs.filter(j => j.id !== job.id && j.category !== job.category)).slice(0,3).map(j => jobCard(j,root)));
+    try{const others=await jobs(job.category_id==null?{}:{category_id:job.category_id});related.replaceChildren(...others.filter(j=>j.id!==job.id).slice(0,3).map(j=>jobCard(j,root)));}catch(e){related.textContent=e.message;}
+    if(job.job_status!=='open'){const link=document.querySelector('#apply-job-link');link.removeAttribute('href');link.textContent='Tin đã đóng';}
+
   }
 }
 

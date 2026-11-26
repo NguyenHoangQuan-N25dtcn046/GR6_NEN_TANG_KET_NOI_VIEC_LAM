@@ -1,5 +1,6 @@
 import {renderLayout} from './components/layout.js';
-import {demoJobs,jobCard} from './components/job-card.js';
+import {jobCard} from './components/job-card.js';
+import {jobs as fetchJobs} from './api.js';
 renderLayout();
-const jobs=document.querySelector('#recent-jobs');if(jobs)demoJobs.slice(0,5).forEach(j=>jobs.append(jobCard(j,'.')));
-const search=document.querySelector('#hero-search');if(search)search.addEventListener('submit',e=>{e.preventDefault();const data=new FormData(search);const q=new URLSearchParams();for(const [k,v] of data)if(String(v).trim())q.set(k,String(v).trim());location.href=`./pages/jobs.html?${q}`});
+const jobs=document.querySelector('#recent-jobs');if(jobs){try{const data=await fetchJobs();data.slice(0,5).forEach(j=>jobs.append(jobCard(j,'.')));if(!data.length)jobs.textContent='Chưa có việc làm công khai.';}catch(e){jobs.textContent=e.message;}}
+const search=document.querySelector('#hero-search');const loc=document.querySelector('#hero-location');if(loc){const field=document.createElement('input');field.name='location';field.placeholder='Nhập địa điểm';field.setAttribute('aria-label','Địa điểm');loc.replaceWith(field);}const cat=document.querySelector('#hero-category');if(cat){const field=document.createElement('input');field.name='category_id';field.type='number';field.min='1';field.placeholder='ID ngành (tùy chọn)';field.setAttribute('aria-label','ID ngành');cat.replaceWith(field);}if(search)search.addEventListener('submit',e=>{e.preventDefault();const data=new FormData(search);const q=new URLSearchParams();for(const [k,v] of data)if(String(v).trim())q.set(k,String(v).trim());location.href=`./pages/jobs.html?${q}`});
