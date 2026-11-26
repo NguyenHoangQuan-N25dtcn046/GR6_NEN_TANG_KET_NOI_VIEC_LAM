@@ -18,7 +18,8 @@ def create_user(session, email, role, full_name="Ứng viên Test", company_name
 
 
 def create_job(session, employer_id, title="Developer", description="Mô tả công việc",
-               location="Hà Nội", status="published", category_id=None, deadline=None):
+               location="Hà Nội", status="published", category_id=None, deadline=None,
+               work_mode=None, salary_min=None, salary_max=None):
     """Tạo tin; tham số `status` cũ được ánh xạ sang approval_status/job_status."""
     approval_status = "approved" if status in ("published", "closed") else status
     job_status = "closed" if status in ("closed", "rejected") else "open"
@@ -32,6 +33,9 @@ def create_job(session, employer_id, title="Developer", description="Mô tả c�
         job_status=job_status,
         category_id=category_id,
         deadline=deadline,
+        work_mode=work_mode,
+        salary_min=salary_min,
+        salary_max=salary_max,
     )
     session.add(job)
     session.commit()

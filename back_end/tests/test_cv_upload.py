@@ -3,6 +3,7 @@ from app.core.config import settings
 from tests.helpers import auth_header, create_job, create_user
 
 PDF_BYTES = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+DOCX_BYTES = b"PK\x03\x04" + b"\x00" * 24  # DOCX là file ZIP, bắt đầu bằng PK\x03\x04
 
 
 def test_upload_valid_pdf(client, db_session, tmp_path, monkeypatch):
@@ -39,6 +40,31 @@ def test_reject_fake_pdf(client, db_session, tmp_path, monkeypatch):
     resp = client.post(
         "/api/v1/candidate/cv",
         files={"file": ("cv.pdf", b"not a pdf", "application/pdf")},
+        headers=auth_header(cand),
+    )
+    assert resp.status_code == 415
+
+
+def test_upload_valid_docx(client, db_session, tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
+    cand, _ = create_user(db_session, "cand@test.com", "candidate")
+
+    resp = client.post(
+        "/api/v1/candidate/cv",
+        files={"file": ("cv.docx", DOCX_BYTES, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        headers=auth_header(cand),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["cv_url"].endswith(".docx")
+
+
+def test_reject_fake_docx(client, db_session, tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
+    cand, _ = create_user(db_session, "cand@test.com", "candidate")
+
+    resp = client.post(
+        "/api/v1/candidate/cv",
+        files={"file": ("cv.docx", b"not a docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
         headers=auth_header(cand),
     )
     assert resp.status_code == 415
@@ -121,6 +147,9 @@ def test_cv_responses_are_documented(client):
     candidate_cv = paths["/api/v1/candidate/cv"]
     employer_cv = paths["/api/v1/employer/jobs/{job_id}/applications/{application_id}/cv"]
     for endpoint in (candidate_cv, employer_cv):
-        assert set(endpoint["get"]["responses"]["200"]["content"]) == {"application/pdf"}
+        assert set(endpoint["get"]["responses"]["200"]["content"]) == {
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }
     for code in ("413", "415"):
         assert set(candidate_cv["post"]["responses"][code]["content"]) == {"application/problem+json"}

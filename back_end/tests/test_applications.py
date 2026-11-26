@@ -89,3 +89,28 @@ def test_employer_view_and_process_applications(client, db_session):
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "accepted"
+
+
+def test_apply_with_custom_cv(client, db_session, tmp_path, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
+    cand, _ = create_user(db_session, "cand@test.com", "candidate")
+    _, emp = create_user(db_session, "emp@test.com", "employer")
+    job = create_job(db_session, emp.id, status="published")
+
+    pdf = b"%PDF-1.4 test content"
+    resp = client.post(
+        "/api/v1/candidate/cv",
+        files={"file": ("cv.pdf", pdf, "application/pdf")},
+        headers=auth_header(cand),
+    )
+    cv_url = resp.json()["cv_url"]
+
+    # Ứng tuyển kèm CV riêng (cv_url) thay vì CV mặc định
+    resp = client.post(
+        f"/api/v1/jobs/{job.id}/applications",
+        json={"cover_letter": "hi", "cv_url": cv_url},
+        headers=auth_header(cand),
+    )
+    assert resp.status_code == 201
+    assert resp.json()["cv_url"] == cv_url
