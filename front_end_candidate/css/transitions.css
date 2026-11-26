@@ -1,0 +1,12 @@
+/* Chuyển trang tinh tế, chỉ thay đổi opacity và vị trí rất nhỏ. */
+@media (prefers-reduced-motion: no-preference) {
+  body { animation: page-enter 240ms ease-out both; }
+  body.page-leaving { opacity: 0; transition: opacity 170ms ease-in; }
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body { animation: none !important; transition: none !important; }
+}
