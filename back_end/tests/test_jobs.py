@@ -60,3 +60,21 @@ def test_job_detail_hides_unapproved(client, db_session):
 
     resp = client.get(f"/api/v1/jobs/{job.id}")
     assert resp.status_code == 404
+
+
+def test_filter_by_work_mode(client, db_session):
+    _, emp = create_user(db_session, "emp6@test.com", "employer")
+    create_job(db_session, emp.id, title="Remote Dev", work_mode="remote", status="published")
+    create_job(db_session, emp.id, title="Onsite Dev", work_mode="onsite", status="published")
+
+    resp = client.get("/api/v1/jobs", params={"work_mode": "remote"})
+    assert [j["title"] for j in resp.json()] == ["Remote Dev"]
+
+
+def test_filter_by_salary(client, db_session):
+    _, emp = create_user(db_session, "emp7@test.com", "employer")
+    create_job(db_session, emp.id, title="Low", salary_min=5000000, salary_max=10000000, status="published")
+    create_job(db_session, emp.id, title="High", salary_min=20000000, salary_max=30000000, status="published")
+
+    resp = client.get("/api/v1/jobs", params={"salary_min": 15000000})
+    assert [j["title"] for j in resp.json()] == ["High"]

@@ -47,6 +47,7 @@ class Job(Base):
     salary_max: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     deadline: Mapped[date | None] = mapped_column(Date)
+    work_mode: Mapped[str | None] = mapped_column(String(20), nullable=True)  # onsite/remote/hybrid
     job_status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     approval_status: Mapped[str] = mapped_column("approval", String(20), nullable=False, default="pending")
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -90,3 +91,27 @@ class RevokedToken(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     revoke_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CandidateExperience(Base):
+    """Kinh nghiệm làm việc của ứng viên."""
+    __tablename__ = "candidate_experiences"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidate_profiles.id"), index=True)
+    company: Mapped[str] = mapped_column(String(200))
+    position: Mapped[str] = mapped_column(String(200))
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)  # None = hiện tại
+    description: Mapped[str | None] = mapped_column(Text)
+
+
+class CandidateEducation(Base):
+    """Học vấn của ứng viên."""
+    __tablename__ = "candidate_educations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    candidate_id: Mapped[int] = mapped_column(ForeignKey("candidate_profiles.id"), index=True)
+    school: Mapped[str] = mapped_column(String(200))
+    major: Mapped[str] = mapped_column(String(200))
+    degree: Mapped[str] = mapped_column(String(100))
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date | None] = mapped_column(Date)

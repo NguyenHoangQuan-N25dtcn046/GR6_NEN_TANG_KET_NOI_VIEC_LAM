@@ -31,11 +31,18 @@ def apply_to_job(db: Session, job_id: int, payload: ApplicationCreate, user_id: 
     if db.scalar(duplicate) is not None:
         raise HTTPException(status_code=409, detail="Bạn đã ứng tuyển công việc này")
 
+    # CV kèm đơn: ưu tiên cv_url gửi lên (phải thuộc về ứng viên), nếu không thì dùng CV hồ sơ.
+    cv_url = payload.cv_url
+    if cv_url and resolve_cv_path(cv_url, user_id) is None:
+        raise HTTPException(status_code=400, detail="CV không hợp lệ")
+    if not cv_url:
+        cv_url = profile.cv_url if resolve_cv_path(profile.cv_url, user_id) else None
+
     application = Application(
         job_id=job_id,
         candidate_id=candidate_id,
         cover_letter=payload.cover_letter,
-        cv_url=profile.cv_url if resolve_cv_path(profile.cv_url, user_id) else None,
+        cv_url=cv_url,
     )
     db.add(application)
     try:

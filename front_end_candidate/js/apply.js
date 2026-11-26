@@ -1,12 +1,9 @@
 import { renderLayout } from './components/layout.js';
-import {api,jobById,uploadCV,me} from './api.js';
+import {api,cvMime,jobById,uploadCV,me} from './api.js';
 
 renderLayout();
 
-// APPLY-02: giao diện + validation tại client. Chưa có API và không lưu dữ liệu ứng tuyển.
 const MAX_CV_BYTES = 5 * 1024 * 1024;
-const PDF_MIME = 'application/pdf';
-const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const form = document.querySelector('#apply-form');
 const missing = document.querySelector('#apply-missing');
 const jobId = new URLSearchParams(window.location.search).get('jobId');
@@ -43,9 +40,8 @@ function setError(field, text) {
 
 function validateCV(file) {
   if (!file) return 'Vui lòng chọn file CV để ứng tuyển.';
-  const extension = file.name.split('.').pop()?.toLowerCase();
-  const mime = extension === 'pdf' ? PDF_MIME : null;
-  if (!mime || (file.type && file.type !== mime)) return 'Chỉ hỗ trợ CV định dạng PDF.';
+  const mime = cvMime(file.name);
+  if (!mime || (file.type && file.type !== mime)) return 'Chỉ hỗ trợ CV định dạng PDF hoặc DOCX.';
   if (!file.size) return 'Tệp CV không được để trống.';
   if (file.size > MAX_CV_BYTES) return 'Dung lượng CV phải nhỏ hơn hoặc bằng 5 MB.';
   return '';

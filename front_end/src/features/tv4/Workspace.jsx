@@ -251,7 +251,10 @@ function ApplicantList({ api, id }) {
         const url = URL.createObjectURL(file)
         const link = document.createElement('a')
         link.href = url
-        link.download = 'application-' + item.id + '-cv.pdf'
+        const extension = file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          ? 'docx'
+          : 'pdf'
+        link.download = 'application-' + item.id + '-cv.' + extension
         link.click()
         setTimeout(() => URL.revokeObjectURL(url), 30000)
         return 'CV download started.'

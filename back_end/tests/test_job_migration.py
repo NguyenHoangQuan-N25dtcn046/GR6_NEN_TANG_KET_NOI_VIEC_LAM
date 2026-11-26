@@ -18,6 +18,7 @@ def test_migration_preserves_data_and_is_repeatable(legacy_fields):
     upgrade(engine)
     columns = {c['name']: c for c in inspect(engine).get_columns('jobs')}
     assert 'True' not in columns and columns['rejection_reason']['nullable']
+    assert columns["work_mode"]["nullable"]
     with engine.begin() as conn:
         assert conn.exec_driver_sql("PRAGMA foreign_keys").scalar() == 1
         assert not conn.exec_driver_sql("PRAGMA foreign_key_check").all()

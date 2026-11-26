@@ -14,6 +14,8 @@ from app.core.security import hash_password
 from app.db.session import Base, SessionLocal, engine
 from app.models.entities import (
     Application,
+    CandidateEducation,
+    CandidateExperience,
     CandidateProfile,
     EmployerProfile,
     Job,
@@ -28,7 +30,10 @@ def seed() -> None:
     db = SessionLocal()
 
     # 1. Xóa dữ liệu cũ (thứ tự: con trước, cha sau)
-    for model in [Application, Job, CandidateProfile, EmployerProfile, JobCategory, RevokedToken, User]:
+    for model in [
+        Application, CandidateEducation, CandidateExperience, Job,
+        CandidateProfile, EmployerProfile, JobCategory, RevokedToken, User,
+    ]:
         db.query(model).delete()
     db.commit()
     print("Da xoa du lieu cu.")

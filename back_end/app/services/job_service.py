@@ -1,4 +1,5 @@
 from typing import Optional
+from decimal import Decimal
 
 from fastapi import HTTPException
 from sqlalchemy import or_, select
@@ -20,10 +21,13 @@ def list_public_jobs(
     q: Optional[str] = None,
     location: Optional[str] = None,
     category_id: Optional[int] = None,
+    work_mode: Optional[str] = None,
+    salary_min: Optional[Decimal] = None,
+    salary_max: Optional[Decimal] = None,
     limit: int = 20,
     offset: int = 0,
 ):
-    """Danh sách tin công khai (đã duyệt + còn mở), hỗ trợ tìm kiếm + phân trang."""
+    """Danh sách tin công khai (đã duyệt + còn mở), hỗ trợ tìm kiếm + lọc + phân trang."""
     stmt = select(Job).where(Job.approval_status == "approved", Job.job_status == "open")
     if q:
         like = f"%{q}%"
@@ -32,6 +36,12 @@ def list_public_jobs(
         stmt = stmt.where(Job.location.ilike(f"%{location}%"))
     if category_id is not None:
         stmt = stmt.where(Job.category_id == category_id)
+    if work_mode:
+        stmt = stmt.where(Job.work_mode == work_mode)
+    if salary_min is not None:
+        stmt = stmt.where(Job.salary_max >= salary_min)
+    if salary_max is not None:
+        stmt = stmt.where(Job.salary_min <= salary_max)
     return db.scalars(stmt.order_by(Job.id.desc()).offset(offset).limit(limit)).all()
 
 
