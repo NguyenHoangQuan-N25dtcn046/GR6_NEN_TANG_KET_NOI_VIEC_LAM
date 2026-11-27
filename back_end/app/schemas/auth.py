@@ -12,29 +12,11 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-
-class PasswordUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    current_password: str = Field(min_length=1, max_length=128)
-    new_password: str = Field(min_length=8, max_length=128)
-
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: EmailStr
     role: str
-    is_active: bool
-
-
-class UserManagementList(BaseModel):
-    message: str
-    data: list[UserResponse]
-
-
-class UserStatusUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-
     is_active: bool
 
 class TokenResponse(BaseModel):

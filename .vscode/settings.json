@@ -1,4 +1,7 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python.terminal.useEnvFile": true
+    "python.terminal.useEnvFile": true,
+    "liveServer.settings.port": 5501,
+    "liveServer.settings.host": "127.0.0.1",
+    "liveServer.settings.root": "/front_end_candidate"
 }

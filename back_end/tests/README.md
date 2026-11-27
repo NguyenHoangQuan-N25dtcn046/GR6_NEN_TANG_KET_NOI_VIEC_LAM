@@ -3,7 +3,7 @@
 Chạy từ thư mục gốc repository bằng PowerShell:
 
 ```powershell
-.\.job_connect_venv\Scripts\python.exe -m pip install -r back_end/requirements.txt
+.\.job_connect_venv\Scripts\python.exe -m pip install -r back_end/requirements-dev.txt
 .\.job_connect_venv\Scripts\python.exe -m pytest back_end/tests -q
 ```
 
@@ -50,7 +50,7 @@ Lỗi dùng `Content-Type: application/problem+json`, áp dụng cả lỗi rout
 
 Frontend cần đọc `id` thay cho `job_id`, `rejection_reason` thay cho `reason` trong response job; không gọi `response.json()` khi logout trả `204`. Request từ chối vẫn gửi `{ "reason": "..." }`. Response lỗi có `detail` dạng chuỗi và `errors` riêng cho validation.
 
-Danh sách người dùng, ứng tuyển, quản lý tin, hồ sơ và các API quản trị đã triển khai. Hợp đồng hiện hành nằm trong `docs/API_CONTRACT.md`.
+Các endpoint dashboard/danh sách người dùng/ứng tuyển/tạo tin đang là placeholder từ source ban đầu; thay đổi này không triển khai nghiệp vụ còn thiếu ở các endpoint đó.
 
 ## Database cũ
 
@@ -67,4 +67,4 @@ Danh sách người dùng, ứng tuyển, quản lý tin, hồ sơ và các API 
 
 Migration đổi cột `True` thành `rejection_reason`, cho phép NULL; bổ sung `approval`/`job_status` nếu thiếu và chuyển trạng thái cũ khi bổ sung. Model dùng thuộc tính Python `approval_status` ánh xạ tới cột DB `approval`. Nếu đã có `approval`, giữ nguyên quyết định duyệt hiện có. Nếu đồng thời có cả tên cột cũ và mới, migration dừng để tránh mất dữ liệu.
 
-Migration bổ sung các cột lọc việc làm và phiên tài khoản. Chạy trước khi khởi động backend trên database cũ, rồi để backend tạo các bảng còn thiếu. Bài kiểm thử chạy migration hai lần và kiểm tra các bản ghi cũ.
+Migration đã được kiểm tra trên SQLite với schema cũ và schema lỗi, bao gồm chạy hai lần. Chưa chạy trên DB thực tế hoặc kiểm thử tích hợp MySQL. Script chỉ nâng cấp các trường job; không thay thế hệ thống migration đầy đủ cho mọi khác biệt schema cũ.

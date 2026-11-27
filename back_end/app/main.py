@@ -1,9 +1,6 @@
-from pathlib import Path
-
 from fastapi import FastAPI
 from app.core.errors import PROBLEM_RESPONSES, register_error_handlers
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.db.session import Base, engine, db_init
 from app.models import entities  # register models
@@ -34,7 +31,3 @@ app.include_router(candidate_router, prefix="/api/v1")
 app.include_router(employer_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(admin_job_router, prefix="/api/v1")
-
-candidate_web = Path(__file__).resolve().parents[2] / "front_end_candidate"
-if candidate_web.is_dir():
-    app.mount("/candidate-web", StaticFiles(directory=candidate_web, html=True), name="candidate-web")

@@ -1,173 +1,35 @@
-import { api } from './api.js';
+import {api} from './api.js';
 
-const dates = [
-  ['start_date', 'Ngày bắt đầu', 'date', true],
-  ['end_date', 'Ngày kết thúc', 'date', false],
-];
+const definitions = {
+  experiences: {label:'kinh nghiệm', fields:[['company','Công ty',200],['position','Vị trí',200],['start_date','Ngày bắt đầu','date'],['end_date','Ngày kết thúc (bỏ trống nếu đang làm)','date',false],['description','Mô tả','textarea',false]], title:r=>`${r.position} · ${r.company}`, detail:r=>r.description},
+  educations: {label:'học vấn', fields:[['school','Trường',200],['major','Chuyên ngành',200],['degree','Bằng cấp',100],['start_date','Ngày bắt đầu','date'],['end_date','Ngày kết thúc (bỏ trống nếu đang học)','date',false]], title:r=>r.school, detail:r=>`${r.major} · ${r.degree}`}
+};
+function el(tag, cls='', text='') {const n=document.createElement(tag);n.className=cls;n.textContent=text;return n;}
+function button(text,cls='btn btn--outline btn--sm'){const n=el('button',cls,text);n.type='button';return n;}
+const dateLabel=value=>value?value.split('-').reverse().join('/'):'Hiện tại';
 
-const sections = [
-  {
-    id: 'work-history',
-    endpoint: '/candidate/experiences',
-    label: 'kinh nghiệm',
-    fields: [
-      ['company', 'Công ty', 'text', true, 200],
-      ['position', 'Vị trí', 'text', true, 200],
-      ...dates,
-      ['description', 'Mô tả', 'textarea', false, 10000],
-    ],
-    title: record => record.position,
-    subtitle: record => record.company,
-  },
-  {
-    id: 'education-history',
-    endpoint: '/candidate/educations',
-    label: 'học vấn',
-    fields: [
-      ['school', 'Trường', 'text', true, 200],
-      ['major', 'Chuyên ngành', 'text', true, 200],
-      ['degree', 'Bằng cấp', 'text', true, 100],
-      ...dates,
-    ],
-    title: record => record.school,
-    subtitle: record => [record.degree, record.major].join(' · '),
-  },
-];
-
-function node(tag, text, className) {
-  const element = document.createElement(tag);
-  if (text) element.textContent = text;
-  if (className) element.className = className;
-  return element;
-}
-
-function button(label, action, className = 'btn btn--outline') {
-  const element = node('button', label, className);
-  element.type = 'button';
-  element.addEventListener('click', action);
-  return element;
-}
-
-function mountSection(config) {
-  const section = document.getElementById(config.id);
-  const list = section.querySelector('.record-list');
-  const status = section.querySelector('[role="status"]');
-  const editor = node('form', '', 'profile-form');
-  const fields = node('fieldset', '', 'profile-form-grid record-fields');
-  const actions = node('div', '', 'profile-form-actions');
-  const submit = node('button', 'Lưu', 'btn');
-  submit.type = 'submit';
-  const add = button('Thêm ' + config.label, () => openEditor());
-  const cancel = button('Hủy', closeEditor);
-  for (const [name, label, type, required, maxLength] of config.fields) {
-    const wrapper = node('label', label, 'profile-field');
-    const control = node(type === 'textarea' ? 'textarea' : 'input');
-    if (type !== 'textarea') control.type = type;
-    if (maxLength) control.maxLength = maxLength;
-    control.name = name;
-    control.required = required;
-    wrapper.append(control);
-    fields.append(wrapper);
+export function mountRecords(section, kind, onCount) {
+  const def=definitions[kind], path=`/candidate/${kind}`, root=section.querySelector('.record-manager');
+  const toolbar=el('div','record-toolbar'), add=button(`+ Thêm ${def.label}`), retry=button('Tải lại');
+  add.disabled=true;retry.hidden=true;toolbar.append(add,retry);
+  const list=el('div','record-list'), status=el('p','profile-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  const form=el('form','profile-form record-form');form.hidden=true;
+  const grid=el('div','profile-form-grid'), inputs={};
+  for(const [name,label,type,required=true] of def.fields){
+    const field=el('div',`profile-field${type==='textarea'?' profile-field-wide':''}`), caption=el('label','',label+(required?' *':''));
+    const input=el(type==='textarea'?'textarea':'input');input.id=`${kind}-${name}`;input.name=name;caption.htmlFor=input.id;input.required=required;
+    if(type==='date')input.type='date';else if(type==='textarea'){input.rows=3;input.maxLength=2000;}else{input.type='text';input.maxLength=type;}
+    inputs[name]=input;field.append(caption,input);grid.append(field);
   }
-  actions.append(cancel, submit);
-  fields.append(actions);
-  editor.append(fields);
-  editor.hidden = true;
-  section.querySelector('.profile-card-header').append(add);
-  section.append(editor);
-  let records = [];
-  let editing = null;
-  let busy = false;
-
-  function openEditor(record = null) {
-    if (busy) return;
-    editing = record;
-    status.textContent = '';
-    for (const [name] of config.fields) editor.elements.namedItem(name).value = record?.[name] ?? '';
-    editor.hidden = false;
-    editor.querySelector('input').focus();
-  }
-  function closeEditor() {
-    editor.hidden = true;
-    editing = null;
-  }
-  function setBusy(value) {
-    busy = value;
-    fields.disabled = value;
-    add.disabled = value;
-    for (const control of list.querySelectorAll('button')) control.disabled = value;
-  }
-  function render() {
-    const cards = records.map(record => {
-      const item = node('li', '', 'profile-record');
-      const tools = node('div', '', 'profile-form-actions');
-      tools.append(
-        button('Sửa', () => openEditor(record)),
-        button('Xóa', () => {
-          if (window.confirm('Xóa mục ' + config.title(record) + '?')) {
-            run(async () => {
-              await api(config.endpoint + '/' + record.id, { method: 'DELETE', auth: true });
-              records = records.filter(entry => entry.id !== record.id);
-              if (editing?.id === record.id) closeEditor();
-              render();
-              status.textContent = 'Đã xóa mục ' + config.label + '.';
-            });
-          }
-        }),
-      );
-      item.append(
-        node('h3', config.title(record)),
-        node('p', config.subtitle(record)),
-        node('p', record.start_date + ' – ' + (record.end_date ?? 'Hiện tại')),
-      );
-      if (record.description) item.append(node('p', record.description));
-      item.append(tools);
-      return item;
-    });
-    list.replaceChildren(...(cards.length ? cards : [node('li', 'Chưa có thông tin ' + config.label + '.')]));
-  }
-  async function run(action) {
-    if (busy) return;
-    setBusy(true);
-    try {
-      await action();
-    } catch (error) {
-      status.textContent = error.message;
-    } finally {
-      setBusy(false);
-    }
-  }
-  editor.addEventListener('submit', event => {
-    event.preventDefault();
-    const body = Object.fromEntries(new FormData(editor));
-    for (const [name, label, , required] of config.fields) {
-      const value = body[name].trim();
-      if (required && !value) {
-        status.textContent = 'Vui lòng nhập ' + label.toLowerCase() + '.';
-        return;
-      }
-      body[name] = value || null;
-    }
-    if (body.end_date && body.end_date < body.start_date) {
-      status.textContent = 'Ngày kết thúc phải từ ngày bắt đầu trở đi.';
-      return;
-    }
-    run(async () => {
-      const path = editing ? config.endpoint + '/' + editing.id : config.endpoint;
-      const saved = await api(path, { method: editing ? 'PATCH' : 'POST', body, auth: true });
-      records = [saved, ...records.filter(entry => entry.id !== saved.id)]
-        .sort((a, b) => b.start_date.localeCompare(a.start_date) || b.id - a.id);
-      closeEditor();
-      render();
-      status.textContent = 'Đã lưu mục ' + config.label + '.';
-    });
-  });
-  return run(async () => {
-    records = await api(config.endpoint, { auth: true });
-    render();
-  });
-}
-
-export function loadProfileRecords() {
-  return Promise.all(sections.map(mountSection));
+  const actions=el('div','profile-form-actions'), cancel=button('Hủy','profile-cancel'), save=el('button','btn','Lưu');save.type='submit';actions.append(cancel,save);form.append(grid,actions);root.append(toolbar,list,form,status);
+  let rows=[],editing=null,busy=false,ready=false;
+  function message(text='',state=''){status.textContent=text;status.dataset.state=state;}
+  function controls(){add.disabled=busy||!ready;retry.disabled=busy;save.disabled=busy;cancel.disabled=busy;for(const input of Object.values(inputs))input.disabled=busy;for(const b of list.querySelectorAll('button'))b.disabled=busy||!ready;}
+  function close(){form.reset();editing=null;form.hidden=true;}
+  function open(row=null){if(busy||!ready)return;editing=row?.id??null;form.reset();for(const [name,input] of Object.entries(inputs))input.value=row?.[name]??'';form.hidden=false;message();Object.values(inputs)[0].focus();}
+  function render(){list.replaceChildren();if(!rows.length)list.append(el('p','record-empty',`Chưa có ${def.label}.`));for(const row of rows){const card=el('article','record-item'),info=el('div','record-info');info.append(el('strong','',def.title(row)),el('p','',`${dateLabel(row.start_date)} – ${dateLabel(row.end_date)}`));if(def.detail(row))info.append(el('p','',def.detail(row)));const buttons=el('div','record-actions'), change=button('Sửa'), remove=button('Xóa','profile-cancel');change.addEventListener('click',()=>open(row));remove.addEventListener('click',async()=>{if(busy||!ready||!confirm(`Xóa ${def.label} này?`))return;busy=true;controls();try{await api(`${path}/${row.id}`,{method:'DELETE',auth:true});rows=rows.filter(r=>r.id!==row.id);if(editing===row.id)close();render();message('Đã xóa.','success');}catch(e){message(e.message,'error');}finally{busy=false;controls();}});buttons.append(change,remove);card.append(info,buttons);list.append(card);}onCount(rows.length);controls();}
+  async function load(){if(busy)return;busy=true;controls();message('Đang tải…');try{rows=await api(path,{auth:true});ready=true;retry.hidden=true;render();message();}catch(e){ready=false;retry.hidden=false;message(e.message,'error');}finally{busy=false;controls();}}
+  add.addEventListener('click',()=>open());retry.addEventListener('click',load);cancel.addEventListener('click',()=>{close();message();});
+  form.addEventListener('submit',async e=>{e.preventDefault();if(busy||!ready)return;const data=Object.fromEntries(Object.entries(inputs).map(([name,input])=>[name,input.value.trim()||null]));if(def.fields.some(([name,,,required=true])=>required&&!data[name])){message('Vui lòng nhập đủ các trường bắt buộc.','error');return;}if(data.end_date&&data.start_date>data.end_date){message('Ngày kết thúc không được trước ngày bắt đầu.','error');return;}const id=editing;busy=true;controls();try{const row=await api(id===null?path:`${path}/${id}`,{method:id===null?'POST':'PATCH',auth:true,body:data});rows=id===null?[row,...rows]:rows.map(r=>r.id===id?row:r);rows.sort((a,b)=>b.start_date.localeCompare(a.start_date));close();render();message('Đã lưu trên hệ thống.','success');}catch(e){message(e.message,'error');}finally{busy=false;controls();}});
+  return {load,unavailable(text){ready=false;controls();message(text,'error');}};
 }

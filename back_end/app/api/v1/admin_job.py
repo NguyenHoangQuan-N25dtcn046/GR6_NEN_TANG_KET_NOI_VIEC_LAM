@@ -1,12 +1,12 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import case, select, update
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.permissions import require_admin
 from app.db.session import get_db
 from app.models.entities import Job
-from app.schemas.job import ApprovalStatus, JobResponse, RejectJobRequest
+from app.schemas.job import JobResponse, PendingJobPage, RejectJobRequest
 from app.services.job_permissions import get_job_or_404
 
 router = APIRouter(
@@ -16,49 +16,54 @@ router = APIRouter(
 )
 
 
-@router.get("", response_model=list[JobResponse])
-def list_jobs_for_moderation(
-    approval_status: ApprovalStatus | None = None,
+@router.get("/pending", response_model=PendingJobPage, summary="Danh sách tin chờ duyệt")
+def list_pending_jobs(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ):
-    query = select(Job)
-    if approval_status is not None:
-        query = query.where(Job.approval_status == approval_status)
-    return db.scalars(query.order_by(Job.id.desc()).offset(offset).limit(limit)).all()
-
-
-@router.get("/{job_id}", response_model=JobResponse)
-def get_job_for_moderation(job_id: int, db: Session = Depends(get_db)):
-    return get_job_or_404(db, job_id)
-
-
-@router.patch("/{job_id}/reject", response_model=JobResponse)
-def reject_job(job_id: int, payload: RejectJobRequest, db: Session = Depends(get_db)):
-    return moderate_pending_job(
-        db, job_id, approval_status="rejected", status="rejected",
-        rejection_reason=payload.reason, job_status="closed",
-    )
+    pending = Job.approval_status == "pending"
+    total = db.scalar(select(func.count(Job.id)).where(pending))
+    query = select(Job).where(pending).order_by(Job.id.desc()).offset(offset).limit(limit)
+    return {"items": db.scalars(query).all(), "total": total}
 
 
 @router.patch("/{job_id}/approve", response_model=JobResponse)
-def approve_job(job_id: int, db: Session = Depends(get_db)):
-    return moderate_pending_job(
-        db, job_id, approval_status="approved",
-        status=case((Job.job_status == "open", "published"), else_="closed"),
-        rejection_reason=None,
-    )
-
-
-def moderate_pending_job(db: Session, job_id: int, **changes) -> Job:
-    result = db.execute(
-        update(Job).where(Job.id == job_id, Job.approval_status == "pending").values(**changes)
-    )
-    if result.rowcount == 0:
-        db.rollback()
-        get_job_or_404(db, job_id)
-        raise HTTPException(409, "Chỉ có thể xử lý tin đang chờ duyệt")
+def approve_job(job_id: int,db: Session = Depends(get_db)):
     job = get_job_or_404(db, job_id)
+
+    if job.approval_status != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail="Chỉ có thể duyệt tin đang chờ duyệt"
+        )
+
+    job.approval_status = "approved"
+    job.status = "published" if job.job_status == "open" else "closed"
+    job.rejection_reason = None
+
     db.commit()
+    db.refresh(job)
+
+    return job
+
+
+@router.patch("/{job_id}/reject", response_model=JobResponse)
+def reject_job(job_id: int,payload: RejectJobRequest,db: Session = Depends(get_db)):
+    job = get_job_or_404(db, job_id)
+
+    if job.approval_status != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail="Chỉ có thể từ chối tin đang chờ duyệt"
+        )
+
+    job.approval_status = "rejected"
+    job.status = "rejected"
+    job.rejection_reason = payload.reason
+    job.job_status = "closed"
+
+    db.commit()
+    db.refresh(job)
+
     return job

@@ -2,8 +2,20 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 export const base = '/__preview/tv4'
-export const workLabels = { onsite: 'On-site', remote: 'Remote', hybrid: 'Hybrid' }
-export const jobLabels = { active: 'Active', pending: 'Pending Review', rejected: 'Rejected', closed: 'Closed' }
+export const workLabels = { onsite: 'Tại văn phòng', remote: 'Từ xa', hybrid: 'Kết hợp' }
+export const jobLabels = { active: 'Đang tuyển', pending: 'Chờ duyệt', rejected: 'Đã từ chối', closed: 'Đã đóng' }
+export const locationLabels = {
+  'Ho Chi Minh City': 'Thành phố Hồ Chí Minh',
+  Hanoi: 'Hà Nội',
+  'Da Nang': 'Đà Nẵng',
+  'Can Tho': 'Cần Thơ',
+}
+export const categoryLabels = {
+  'Information Technology': 'Công nghệ thông tin',
+  Design: 'Thiết kế',
+  'Human Resources': 'Nhân sự',
+  Business: 'Kinh doanh',
+}
 export const ButtonLink = ({ to, children, primary }) => <Link className={'tv-button ' + (primary ? 'tv-primary' : '')} to={base + to}>{children}</Link>
 export const Badge = ({ tone, children }) => <span className={'tv-badge tv-' + tone}>{children}</span>
 export const Notice = ({ error, children, className = '' }) => children && <p className={'tv-notice ' + (error ? 'tv-error ' : '') + className} role={error ? 'alert' : 'status'}>{children}</p>
@@ -36,7 +48,7 @@ export function Heading({ title, action }) {
   </div>
 }
 
-export function Confirm({ title, description, label, onCancel, onConfirm, fallback }) {
+export function Confirm({ title, description, label, onCancel, onConfirm, fallback, confirmClassName = 'tv-danger' }) {
   const ref = useRef(null)
   const id = useId()
   useEffect(() => {
@@ -63,7 +75,7 @@ export function Confirm({ title, description, label, onCancel, onConfirm, fallba
       }
     }}>
     <h2 id={id}>{title}</h2><p id={id + '-description'}>{description}</p>
-    <div className="tv-actions"><button onClick={onCancel}>Cancel</button><button className="tv-danger" onClick={onConfirm}>{label}</button></div>
+    <div className="tv-actions"><button onClick={onCancel}>Hủy</button><button className={confirmClassName} onClick={onConfirm}>{label}</button></div>
   </dialog>
 }
 
@@ -96,7 +108,7 @@ export function Choice({ label, value, options, onChange, invalid, placeholder }
       onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setOpen(true) } }}
       onClick={() => open ? setOpen(false) : setOpen(true)}>
       <span id={id + '-value'} className={placeholder && !selectedLabel ? 'tv-placeholder' : undefined}>
-        {selectedLabel || placeholder || 'Select ' + label.toLowerCase()}
+        {selectedLabel || placeholder || 'Chọn ' + label.toLocaleLowerCase('vi-VN')}
       </span><span aria-hidden="true">⌄</span>
     </button>
     {open && <div role="listbox" aria-labelledby={id} className="tv-options">{options.map(([key, name], i) =>

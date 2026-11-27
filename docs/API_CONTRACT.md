@@ -1,38 +1,28 @@
-# API hiện hành dưới /api/v1
+# API contract dự kiến — `/api/v1`
 
-Swagger tại `/docs` mô tả payload và response chi tiết. Các API có vai trò
-yêu cầu Bearer JWT. Phản hồi lỗi dùng `application/problem+json`.
-
-| Method | Endpoint | Quyền | Nghiệp vụ |
+| Method | Endpoint | Role | Trạng thái |
 |---|---|---|---|
-| GET | `/health` | Công khai | Sức khỏe API |
-| POST | `/auth/register`, `/auth/login` | Công khai | Đăng ký ứng viên hoặc nhà tuyển dụng, đăng nhập |
-| GET, POST, PATCH | `/auth/me`, `/auth/logout`, `/auth/password` | Đã đăng nhập | Phiên và đổi mật khẩu |
-| GET | `/jobs`, `/jobs/categories`, `/jobs/{id}` | Công khai | Tìm kiếm, ngành nghề và chi tiết tin đã duyệt |
-| GET, PATCH | `/candidate/profile` | Ứng viên | Hồ sơ cá nhân |
-| GET, POST | `/candidate/cv` | Ứng viên | Tải xuống và tải lên PDF hoặc DOCX |
-| GET, POST | `/candidate/experiences`, `/candidate/educations` | Ứng viên | Xem và thêm thông tin hồ sơ |
-| PATCH, DELETE | `/candidate/experiences/{id}`, `/candidate/educations/{id}` | Ứng viên sở hữu | Sửa và xóa thông tin hồ sơ |
-| POST | `/jobs/{id}/applications` | Ứng viên | Nộp đơn với CV trong hồ sơ |
-| GET | `/candidate/applications`, `/candidate/applications/{id}` | Ứng viên sở hữu | Lịch sử và chi tiết đơn |
-| GET, PUT, DELETE | `/candidate/saved-jobs` và `/candidate/saved-jobs/{id}` | Ứng viên | Xem, lưu và bỏ lưu tin |
-| GET, PATCH | `/employer/profile` | Nhà tuyển dụng | Hồ sơ công ty |
-| GET, POST | `/employer/jobs` | Nhà tuyển dụng | Danh sách tin của mình và tạo tin |
-| GET, DELETE | `/employer/jobs/{id}` | Nhà tuyển dụng sở hữu | Xem hoặc xóa tin chưa có đơn |
-| PATCH | `/jobs/{id}`, `/jobs/{id}/status` | Nhà tuyển dụng sở hữu | Sửa và đóng hoặc mở tin |
-| GET | `/employer/jobs/{id}/applications` | Nhà tuyển dụng sở hữu | Danh sách đơn |
-| PATCH | `/employer/jobs/{id}/applications/{application_id}` | Nhà tuyển dụng sở hữu | Đổi trạng thái đơn |
-| GET | `/employer/jobs/{id}/applications/{application_id}/cv` | Nhà tuyển dụng sở hữu | Tải CV đã nộp |
-| GET | `/admin/jobs`, `/admin/jobs/{id}` | Quản trị | Danh sách, hàng chờ và chi tiết |
-| PATCH | `/admin/jobs/{id}/approve`, `/admin/jobs/{id}/reject` | Quản trị | Duyệt hoặc từ chối tin |
-| GET, PATCH | `/admin/users`, `/admin/users/{id}` | Quản trị | Xem danh sách, khóa hoặc mở khóa tài khoản |
-| POST | `/admin/categories` | Quản trị | Thêm ngành nghề |
+| GET | `/health` | Public | Đã có |
+| GET | `/jobs?q=&limit=&offset=` | Public | Đã có (chỉ published) |
+| POST | `/auth/register` | Public | TODO TV1 |
+| POST | `/auth/login` | Public | TODO TV1 |
+| GET/PATCH | `/candidate/profile` | Candidate | TODO TV2 |
+| POST | `/candidate/cv` | Candidate | TODO TV2 |
+| GET | `/candidate/applications` | Candidate | TODO TV2 |
+| POST | `/jobs/{id}/applications` | Candidate | TODO TV2 |
+| GET/POST | `/employer/jobs` | Employer | TODO TV2 |
+| PATCH | `/employer/jobs/{id}` | Employer owner | TODO TV2 |
+| GET/PATCH | `/employer/jobs/{id}/applications` | Employer owner | TODO TV2 |
+| GET | `/admin/jobs` | Admin | TODO TV1 |
+| PATCH | `/admin/jobs/{id}/moderation` | Admin | TODO TV1 |
 
-`GET /jobs` hỗ trợ `q`, `location`, `category_id`, `salary_min` và
-`salary_max`, cùng `work_mode`, `job_type` và `experience` có thể lặp
-trong query để chọn nhiều giá trị. `experience` nhận `0-1`, `2-3` hoặc
-`4+`. Các danh sách phân trang dùng `limit` và `offset`.
+**Chưa triển khai:** JWT, role guards, ownership, CV upload, các endpoint TODO. Không gọi endpoint TODO từ giao diện cho đến khi backend hoàn thành.
 
-Tin đã nộp đơn chỉ có thể đóng, API xóa trả `409`. Đơn trùng cũng trả
-`409`. Đổi mật khẩu và thay đổi trạng thái tài khoản làm phiên cũ mất
-hiệu lực. Admin được tạo từ máy chủ bằng `python -m scripts.create_admin`.
+## Bổ sung Admin — quản lý người dùng
+
+| Method | Endpoint | Role | Trạng thái |
+|---|---|---|---|
+| GET | `/admin/users?q=&role=&is_active=&limit=20&offset=0` | Admin | Đã triển khai |
+| PATCH | `/admin/users/{user_id}/status` | Admin | Đã triển khai |
+
+Chi tiết response, phân quyền và kiểm thử: [ADMIN_USERS.md](ADMIN_USERS.md). Bảng API dự kiến phía trên là tài liệu lịch sử, không phản ánh đầy đủ trạng thái hiện tại của các module.

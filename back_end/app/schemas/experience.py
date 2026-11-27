@@ -4,13 +4,11 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ExperienceBase(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
     company: str = Field(min_length=1, max_length=200)
     position: str = Field(min_length=1, max_length=200)
     start_date: date
     end_date: date | None = None
-    description: str | None = Field(default=None, max_length=10000)
+    description: str | None = None
 
 
 class ExperienceCreate(ExperienceBase):
@@ -22,13 +20,11 @@ class ExperienceCreate(ExperienceBase):
 
 
 class ExperienceUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
     company: str | None = Field(default=None, min_length=1, max_length=200)
     position: str | None = Field(default=None, min_length=1, max_length=200)
     start_date: date | None = None
     end_date: date | None = None
-    description: str | None = Field(default=None, max_length=10000)
+    description: str | None = None
 
 
 class ExperienceOut(ExperienceBase):

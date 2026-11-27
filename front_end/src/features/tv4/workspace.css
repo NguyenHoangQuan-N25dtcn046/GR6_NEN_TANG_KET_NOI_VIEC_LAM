@@ -53,6 +53,56 @@
 .tv4-live .tv-live-menu-toggle { display: none; }
 .tv4-live .tv-live-nav a[aria-current="page"] { background: #1b3e37; color: #bdf5e9; }
 
+.tv4-live .tv-queue-heading,
+.tv4-live .tv-queue-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tv4-live .tv-queue-heading {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tv4-live .tv-queue-heading h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.tv4-live .tv-queue-total {
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: var(--pale);
+  color: #14574f;
+  font-size: 14px;
+}
+
+.tv4-live .tv-queue-heading button[aria-disabled="true"] { opacity: .65; cursor: wait; }
+.tv4-live .tv-queue-card { overflow-wrap: anywhere; }
+.tv4-live .tv-queue-card-heading .tv-badge { flex: none; white-space: nowrap; }
+.tv4-live .tv-queue-card > .tv-actions,
+.tv4-live .tv-queue-card > .tv-queue-reject { margin-top: 12px; }
+.tv4-live .tv-queue-card details[open] { padding-bottom: 10px; }
+.tv4-live .tv-queue-card h4 { margin: 12px 0 4px; }
+
+.tv4-live .tv-queue-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 126px), 1fr));
+  gap: 12px;
+  margin: 14px 0;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--pale);
+}
+
+.tv4-live .tv-queue-facts dt { color: var(--muted); font-size: 13px; }
+.tv4-live .tv-queue-facts dd { margin: 4px 0 0; font-size: 14px; font-weight: 650; }
+
 @media (max-width: 479px) {
   .tv4-live .tv-nav nav.tv-live-nav { justify-content: space-between; gap: 8px; }
   .tv4-live .tv-live-menu-toggle { display: inline-flex; }

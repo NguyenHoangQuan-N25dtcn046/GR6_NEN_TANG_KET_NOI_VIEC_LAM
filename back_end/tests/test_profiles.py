@@ -23,14 +23,3 @@ def test_profile_requires_candidate_role(client, db_session):
     emp_user, _ = create_user(db_session, "emp@test.com", "employer")
     resp = client.get("/api/v1/candidate/profile", headers=auth_header(emp_user))
     assert resp.status_code == 403
-
-
-def test_candidate_cannot_clear_full_name(client, db_session):
-    candidate, _ = create_user(db_session, "cand@test.com", "candidate")
-    headers = auth_header(candidate)
-    path = "/api/v1/candidate/profile"
-
-    response = client.patch(path, json={"full_name": None}, headers=headers)
-    assert response.status_code == 422
-    assert response.json()["errors"][0]["location"] == ["body", "full_name"]
-    assert client.get(path, headers=headers).json()["full_name"] == "Ứng viên Test"

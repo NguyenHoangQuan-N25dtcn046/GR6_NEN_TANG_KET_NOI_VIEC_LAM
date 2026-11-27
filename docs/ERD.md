@@ -8,18 +8,12 @@ erDiagram
   JOB_CATEGORIES ||--o{ JOBS : categorizes
   CANDIDATE_PROFILES ||--o{ APPLICATIONS : submits
   JOBS ||--o{ APPLICATIONS : receives
-  CANDIDATE_PROFILES ||--o{ CANDIDATE_EXPERIENCES : lists
-  CANDIDATE_PROFILES ||--o{ CANDIDATE_EDUCATIONS : lists
-  CANDIDATE_PROFILES ||--o{ SAVED_JOBS : saves
-  JOBS ||--o{ SAVED_JOBS : bookmarked
-  USERS ||--o{ REVOKED_TOKENS : revokes
   USERS {
     int id PK
     varchar email UK
     varchar password_hash
     varchar role
     boolean is_active
-    int auth_version
     datetime created_at
   }
   CANDIDATE_PROFILES {
@@ -52,12 +46,6 @@ erDiagram
     decimal salary_max
     varchar status
     date deadline
-    varchar approval
-    varchar job_status
-    text rejection_reason
-    varchar work_mode
-    varchar job_type
-    int experience_years
   }
   APPLICATIONS {
     int id PK

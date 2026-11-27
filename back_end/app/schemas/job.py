@@ -1,24 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing import Annotated, Literal
-
-WorkMode = Literal["onsite", "remote", "hybrid"]
-JobType = Literal["full-time", "part-time", "contract", "internship"]
-ExperienceBand = Literal["0-1", "2-3", "4+"]
-ApprovalStatus = Literal["pending", "approved", "rejected"]
-Salary = Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2)]
-ExperienceYears = Annotated[int, Field(ge=0, le=50)]
-
-
-class JobCategoryCreate(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    name: str = Field(min_length=1, max_length=100)
-
-
-class JobCategoryOut(JobCategoryCreate):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
+from typing import Literal, Optional
 
 
 class JobPublic(BaseModel):
@@ -30,11 +13,8 @@ class JobPublic(BaseModel):
     salary_min: Decimal | None
     salary_max: Decimal | None
     deadline: date | None
-    work_mode: WorkMode | None = None
-    job_type: JobType | None = None
-    experience_years: ExperienceYears | None = None
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
     category_id: int | None
-    category_name: str | None = None
     employer_id: int
     company_name: str | None = None
     model_config = ConfigDict(from_attributes=True)
@@ -42,18 +22,14 @@ class JobPublic(BaseModel):
 
 class JobCreate(BaseModel):
     """Employer tạo tin mới."""
-    model_config = ConfigDict(str_strip_whitespace=True)
-
     title: str = Field(min_length=3, max_length=200)
-    description: str = Field(min_length=10, max_length=10000)
+    description: str = Field(min_length=10)
     location: str = Field(min_length=1, max_length=200)
-    salary_min: Salary | None = None
-    salary_max: Salary | None = None
+    salary_min: Decimal | None = Field(default=None, ge=0)
+    salary_max: Decimal | None = Field(default=None, ge=0)
     category_id: int | None = None
     deadline: date | None = None
-    work_mode: WorkMode | None = None
-    job_type: JobType | None = None
-    experience_years: ExperienceYears | None = None
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
 
     @model_validator(mode="after")
     def _check_salary_range(self):
@@ -64,16 +40,9 @@ class JobCreate(BaseModel):
 
 class JobUpdateRequest(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=200)
-    description: str | None = Field(default=None, min_length=10, max_length=10000)
-    location: str | None = Field(default=None, min_length=1, max_length=200)
-    salary_min: Salary | None = None
-    salary_max: Salary | None = None
-    category_id: int | None = None
-    deadline: date | None = None
-    work_mode: WorkMode | None = None
-    job_type: JobType | None = None
-    experience_years: ExperienceYears | None = None
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    description: str | None = Field(default=None, min_length=10)
+    work_mode: Literal["onsite", "remote", "hybrid"] | None = None
+    model_config = ConfigDict(extra="forbid")
 
 
 class JobStatusRequest(BaseModel):
@@ -88,10 +57,11 @@ class RejectJobRequest(BaseModel):
 
 class JobResponse(JobPublic):
     employer_id: int
-    approval_status: ApprovalStatus
+    approval_status: Literal["pending", "approved", "rejected"]
     job_status: Literal["open", "closed"]
     rejection_reason: str | None
 
 
-class PublicJobDetail(JobResponse):
-    is_expired: bool
+class PendingJobPage(BaseModel):
+    items: list[JobResponse]
+    total: int

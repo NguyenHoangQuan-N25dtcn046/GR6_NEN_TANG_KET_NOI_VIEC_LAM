@@ -11,7 +11,6 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[str] = mapped_column(String(20))  # candidate/employer/admin
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    auth_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class CandidateProfile(Base):
@@ -49,39 +48,15 @@ class Job(Base):
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     deadline: Mapped[date | None] = mapped_column(Date)
     work_mode: Mapped[str | None] = mapped_column(String(20), nullable=True)  # onsite/remote/hybrid
-    job_type: Mapped[str | None] = mapped_column(String(20))
-    experience_years: Mapped[int | None] = mapped_column(Integer)
     job_status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     approval_status: Mapped[str] = mapped_column("approval", String(20), nullable=False, default="pending")
     rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     employer = relationship("EmployerProfile", lazy="joined")
-    category = relationship("JobCategory", lazy="joined")
 
     @property
     def company_name(self) -> str | None:
         return self.employer.company_name if self.employer else None
-
-    @property
-    def category_name(self) -> str | None:
-        return self.category.name if self.category else None
-
-    @property
-    def is_expired(self) -> bool:
-        return self.deadline is not None and self.deadline < date.today()
-
-
-class SavedJob(Base):
-    __tablename__ = "saved_jobs"
-
-    candidate_id: Mapped[int] = mapped_column(
-        ForeignKey("candidate_profiles.id", ondelete="CASCADE"), primary_key=True
-    )
-    job_id: Mapped[int] = mapped_column(
-        ForeignKey("jobs.id", ondelete="CASCADE"), primary_key=True, index=True
-    )
-    saved_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
-
 
 class Application(Base):
     __tablename__ = "applications"

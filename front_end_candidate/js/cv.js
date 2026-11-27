@@ -14,14 +14,6 @@ const preview = document.querySelector('#cv-preview-frame');
 const empty = document.querySelector('#cv-preview-empty');
 const openFile = document.querySelector('#cv-open-file');
 const upload = document.querySelector('#cv-upload');
-const jobId = new URLSearchParams(window.location.search).get('jobId');
-if (/^[0-9]+$/.test(jobId ?? '')) {
-  const returnLink = document.createElement('a');
-  returnLink.href = `apply.html?jobId=${encodeURIComponent(jobId)}`;
-  returnLink.textContent = 'Quay lại đơn ứng tuyển';
-  upload.parentElement.append(returnLink);
-}
-
 let objectUrl = null;
 let currentFile = null;
 
@@ -45,7 +37,7 @@ function clearFile() {
 function checkFile(file) {
   if (!file) return 'Bạn chưa chọn tệp CV.';
   const expectedMime = cvMime(file.name);
-  if (!expectedMime || (file.type && file.type !== expectedMime)) return 'Chỉ chấp nhận file PDF hoặc DOCX.';
+  if (!expectedMime || (file.type && file.type !== expectedMime)) return 'Chỉ chấp nhận tệp PDF hoặc DOCX.';
   if (file.size === 0) return 'Tệp CV đang trống.';
   if (file.size > MAX_BYTES) return 'Dung lượng CV không được vượt quá 5 MB.';
   return '';
@@ -56,7 +48,7 @@ function handleFile(file) {
   if (validation) { error.textContent = validation; return; }
   currentFile = file;
   filename.textContent = file.name;
-  meta.textContent = `${(file.size/1024/1024).toFixed(2)} MB · ${file.name.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOCX'} · Chỉ xem thử trên máy`;
+  meta.textContent = `${(file.size/1024/1024).toLocaleString("vi-VN", {maximumFractionDigits: 2})} MB · ${file.name.toLowerCase().endsWith('.pdf') ? 'PDF' : 'DOCX'} · Chỉ xem thử trên máy`;
   selected.hidden = false;
   showPreview(file, cvMime(file.name), file.name);
   upload.disabled = busy;
@@ -68,7 +60,7 @@ function showPreview(file, mime, name) {
   openFile.href = objectUrl;
   openFile.hidden = false;
   openFile.removeAttribute('download');
-  openFile.textContent = 'Mở PDF trong tab mới';
+  openFile.textContent = 'Mở PDF trong thẻ mới';
   if (mime === MIME_PDF) {
     preview.src = objectUrl;
     preview.hidden = false;

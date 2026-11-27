@@ -1,5 +1,3 @@
-import pytest
-
 from tests.helpers import auth_header, create_job, create_user
 
 
@@ -75,24 +73,6 @@ def test_employer_rejects_invalid_category(client, db_session):
         headers=auth_header(emp_user),
     )
     assert resp.status_code == 400
-
-
-@pytest.mark.parametrize("field", ["salary_min", "salary_max"])
-@pytest.mark.parametrize("amount", ["1000000000000.00", "1.001"])
-def test_employer_rejects_salary_outside_database_precision(client, db_session, field, amount):
-    employer, _ = create_user(db_session, "salary@test.com", "employer")
-    response = client.post(
-        "/api/v1/employer/jobs",
-        json={
-            "title": "Backend Developer",
-            "description": "Mô tả công việc chi tiết",
-            "location": "Hà Nội",
-            field: amount,
-        },
-        headers=auth_header(employer),
-    )
-    assert response.status_code == 422
-    assert response.json()["errors"][0]["location"] == ["body", field]
 
 
 def test_delete_job_with_applications_returns_conflict(client, db_session):

@@ -8,9 +8,6 @@ const $=(id)=>document.getElementById(id);
 const fields=isRegister?['register-email','register-password','register-confirm','register-agree']:['login-email','login-password'];
 function setError(id,message){const input=$(id);const error=$(id+'-error');if(error)error.textContent=message;if(input)input.setAttribute('aria-invalid',message?'true':'false');}
 function showStatus(message,state='error'){status.textContent=message;status.dataset.state=state;}
-if (!isRegister && new URLSearchParams(window.location.search).has('passwordChanged')) {
-  showStatus('Đã đổi mật khẩu. Vui lòng đăng nhập lại.', 'success');
-}
 function validate(){
  let valid=true;
  const email=$(isRegister?'register-email':'login-email');
@@ -38,5 +35,5 @@ form?.addEventListener('submit',async event=>{
  if(!validate()){form.querySelector('[aria-invalid="true"]')?.focus();return;}
  const button=form.querySelector('[type="submit"]');button.disabled=true;
  const email=$(isRegister?'register-email':'login-email').value.trim();const password=$(isRegister?'register-password':'login-password').value;
- try{if(isRegister){await api('/auth/register',{method:'POST',body:{email,password,role:'candidate',full_name:$('register-name').value.trim()}});form.reset();showStatus('Đăng ký thành công. Hãy đăng nhập.','success');}else{clearToken();const result=await api('/auth/login',{method:'POST',body:{email,password}});if(!result.access_token)throw new Error('API không trả token.');setToken(result.access_token);await me();location.href='profile.html';}}catch(e){if(!isRegister)clearToken();showStatus(e.message);}finally{button.disabled=false;}
+ try{if(isRegister){await api('/auth/register',{method:'POST',body:{email,password,role:'candidate',full_name:$('register-name').value.trim()}});form.reset();showStatus('Đăng ký thành công. Hãy đăng nhập.','success');}else{clearToken();const result=await api('/auth/login',{method:'POST',body:{email,password}});if(!result.access_token)throw new Error('Hệ thống chưa xác nhận được phiên đăng nhập.');setToken(result.access_token);await me();location.href='profile.html';}}catch(e){if(!isRegister)clearToken();showStatus(e.message);}finally{button.disabled=false;}
 });
