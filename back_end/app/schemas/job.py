@@ -60,3 +60,8 @@ class JobResponse(JobPublic):
     approval_status: Literal["pending", "approved", "rejected"]
     job_status: Literal["open", "closed"]
     rejection_reason: str | None
+
+
+class PendingJobPage(BaseModel):
+    items: list[JobResponse]
+    total: int

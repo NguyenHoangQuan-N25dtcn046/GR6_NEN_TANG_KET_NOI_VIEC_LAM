@@ -17,3 +17,12 @@
 | PATCH | `/admin/jobs/{id}/moderation` | Admin | TODO TV1 |
 
 **Chưa triển khai:** JWT, role guards, ownership, CV upload, các endpoint TODO. Không gọi endpoint TODO từ giao diện cho đến khi backend hoàn thành.
+
+## Bổ sung Admin — quản lý người dùng
+
+| Method | Endpoint | Role | Trạng thái |
+|---|---|---|---|
+| GET | `/admin/users?q=&role=&is_active=&limit=20&offset=0` | Admin | Đã triển khai |
+| PATCH | `/admin/users/{user_id}/status` | Admin | Đã triển khai |
+
+Chi tiết response, phân quyền và kiểm thử: [ADMIN_USERS.md](ADMIN_USERS.md). Bảng API dự kiến phía trên là tài liệu lịch sử, không phản ánh đầy đủ trạng thái hiện tại của các module.

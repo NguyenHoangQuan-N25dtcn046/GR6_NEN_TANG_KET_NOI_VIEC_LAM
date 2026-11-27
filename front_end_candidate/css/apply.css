@@ -6,7 +6,10 @@
 .apply-field{display:flex;flex-direction:column;gap:8px;margin-top:20px}.apply-field label{font-weight:700;font-size:14px}
 .apply-field input,.apply-field textarea{width:100%;border:1px solid #cbd6d2;border-radius:7px;padding:13px 14px;background:#fff;color:var(--ink);font:inherit}
 .apply-field input:focus-visible,.apply-field textarea:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
-.apply-field input[type=file]{cursor:pointer}.apply-field input[aria-invalid=true]{border-color:#bd3636}
+.apply-field input[type=file]{width:1px;padding:0;border:0}.apply-field input[aria-invalid=true]{border-color:#bd3636}
+.apply-cv-choose{align-self:flex-start;cursor:pointer}
+.apply-field input[type=file]:focus-visible+.apply-cv-choose{outline:2px solid var(--teal);outline-offset:3px}
+#apply-cv-meta{overflow-wrap:anywhere}
 .apply-error{color:#b02020;min-height:1px;font-size:13px}.apply-small{font-size:13px;margin:0}
 .apply-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}.apply-actions .btn:disabled{opacity:.55;cursor:not-allowed}
 .apply-result{margin-top:18px;line-height:1.5}.apply-result:not(:empty){padding:13px 15px;border-radius:8px;background:#eaf6f4;color:#144a41}

@@ -1,6 +1,6 @@
 # Nền tảng kết nối việc làm — Nhóm 6
 
-Monorepo MVP: React/Vite (`front_end`) + FastAPI/SQLAlchemy (`back_end`).
+Monorepo MVP: Candidate HTML/CSS/JS (`front_end_candidate`), Employer/Admin React/Vite (`front_end`) và FastAPI/SQLAlchemy (`back_end`).
 
 ## Chạy nhanh (SQLite cho phát triển)
 
@@ -23,7 +23,16 @@ npm install
 cp .env.example .env  # Windows: copy .env.example .env
 npm run dev
 ```
-Web: http://localhost:5173
+Web Employer/Admin: http://localhost:5173
+
+### Candidate
+```bash
+cd front_end_candidate
+python -m http.server 5174 --bind localhost
+```
+Web Candidate: http://localhost:5174. Cấu hình backend `CORS_ORIGINS=http://localhost:5173,http://localhost:5174` cho local.
+
+Triển khai cloud Linux: xem `DEPLOYMENT.md`.
 
 ## Nâng cấp database đã dùng
 
@@ -54,4 +63,4 @@ Mặc định backend dùng SQLite để có thể chạy ngay. Khi dùng MySQL,
 `docs/ERD.md` sơ đồ Mermaid; `docs/SCHEMA.sql` DDL MySQL; `docs/API_CONTRACT.md` API dự kiến; `docs/TEAM_WORKFLOW.md` workflow.
 
 ## Trạng thái
-Đây là **khung khởi tạo chạy được** với health check và danh sách việc làm công khai. Các màn hình và endpoint nghiệp vụ khác là placeholder/TODO, không phải sản phẩm hoàn chỉnh.
+MVP đã có các luồng Auth, Candidate, Employer, Admin duyệt tin. Admin quản lý người dùng đã có danh sách, lọc và khóa/mở khóa Candidate/Employer tại `/admin/users`. Một số tính năng khác theo SRS vẫn chưa hoàn thiện; cần kiểm thử tích hợp trước khi bàn giao. Xem `docs/ADMIN_USERS.md`.

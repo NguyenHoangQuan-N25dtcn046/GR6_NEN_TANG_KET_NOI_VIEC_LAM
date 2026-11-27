@@ -125,6 +125,41 @@ def test_moderation_publication_lifecycle(api):
         assert job.approval_status == "pending" and job.rejection_reason is None
 
 
+@pytest.mark.parametrize("actor,expected", [(None, 401), ("candidate", 403), ("employer", 403)])
+def test_pending_jobs_requires_admin(api, actor, expected):
+    client, _, tokens = api
+    response = client.get(BASE + "/admin/jobs/pending", headers=tokens.get(actor))
+    assert response.status_code == expected
+
+
+def test_pending_jobs_pagination_and_moderation(api):
+    client, _, tokens = api
+    headers = tokens["admin"]
+    queue = BASE + "/admin/jobs/pending"
+    response = client.get(queue, headers=headers, params={"limit": 1})
+    assert response.status_code == 200
+    first = response.json()
+    assert first["total"] == 2
+    assert len(first["items"]) == 1
+    assert first["items"][0]["id"] == 2
+    assert first["items"][0]["company_name"] == "B"
+    assert first["items"][0]["approval_status"] == "pending"
+
+    second = client.get(queue, headers=headers, params={"limit": 1, "offset": 1}).json()
+    assert second["total"] == 2
+    assert [job["id"] for job in second["items"]] == [1]
+    assert client.get(queue, headers=headers, params={"offset": 2}).json() == {"total": 2, "items": []}
+    assert client.get(queue, headers=headers, params={"limit": 101}).status_code == 422
+
+    assert client.patch(BASE + "/admin/jobs/2/approve", headers=headers).status_code == 200
+    remaining = client.get(queue, headers=headers).json()
+    assert remaining["total"] == 1
+    assert [job["id"] for job in remaining["items"]] == [1]
+    response = client.patch(BASE + "/admin/jobs/1/reject", headers=headers, json={"reason": "Invalid content"})
+    assert response.status_code == 200
+    assert client.get(queue, headers=headers).json() == {"total": 0, "items": []}
+
+
 @pytest.mark.parametrize("body,expected", [({},400),({"title":None},422),({"title":"x"*201},422),({"employer_id":2},422),({"approval_status":"approved"},422)])
 def test_update_validation(api, body, expected):
     client, _, tokens = api
